@@ -72,22 +72,22 @@ def get_retriever():
     vectorstore = load_vectorstore(vector_store_path, config.EMBEDDING_MODEL)
     reranker_model = HuggingFaceCrossEncoder(model_name=config.RERANKING_MODEL)
     RERANKER = CrossEncoderReranker(model=reranker_model, top_n=3)
-    with open(f'{vector_store_path}/docstore.pkl', 'rb') as file:
-        documents = pickle.load(file)
+    #with open(f'{vector_store_path}/docstore.pkl', 'rb') as file:
+    #    documents = pickle.load(file)
 
-    doc_ids = [doc.metadata.get('problem_number', '') for doc in documents]
-    store = InMemoryByteStore()
-    id_key = "problem_number"
+    #doc_ids = [doc.metadata.get('problem_number', '') for doc in documents]
+    #store = InMemoryByteStore()
+    #id_key = "problem_number"
     MAX_RETRIEVALS = 5
-    multi_retriever = MultiVectorRetriever(
-            vectorstore=vectorstore,
-            byte_store=store,
-            id_key=id_key,
-            search_kwargs={"k": MAX_RETRIEVALS},
-        )
-    multi_retriever.docstore.mset(list(zip(doc_ids, documents)))
+    #multi_retriever = MultiVectorRetriever(
+    #        vectorstore=vectorstore,
+    #        byte_store=store,
+    #        id_key=id_key,
+    #        search_kwargs={"k": MAX_RETRIEVALS},
+    #    )
+    #multi_retriever.docstore.mset(list(zip(doc_ids, documents)))
     retriever = ContextualCompressionRetriever(
-            base_compressor=RERANKER, base_retriever=multi_retriever
+            base_compressor=RERANKER, base_retriever=vectorstore.as_retriever(search_kwargs={"k": MAX_RETRIEVALS})
             )
 
     def search(query: str) -> List[Document]:

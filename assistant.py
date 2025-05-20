@@ -18,7 +18,7 @@ from langchain_community.tools import DuckDuckGoSearchRun
 
 from langchain.agents import initialize_agent, AgentType
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+#from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 from retriever import get_search_tool
 from tools import get_support_contact, get_discounts_and_actions, get_customer_manager_contact
@@ -48,7 +48,7 @@ class Assistant:
             ):
                 break
             messages = state["messages"] + [("user", "Respond with a real output.")]
-            state = {**state, "messages": messages}
+            state = {**state, "messages": messages} # type: ignore
         return {"messages": result}
 
 
@@ -57,13 +57,13 @@ def assistant_factory(model: ModelType):
     # Haiku is faster and cheaper, but less accurate
     # llm = ChatAnthropic(model="claude-3-haiku-20240307")
     
-    processor = Palimpsest(verbose=True)
+    #processor = Palimpsest(verbose=True)
 
-    def anonymize(text):
-        return processor.anonimize(text)
+    #def anonymize(text):
+    #    return processor.anonimize(text)
 
-    def deanonymize(text):
-        return processor.deanonimize(text)
+    #def deanonymize(text):
+    #    return processor.deanonimize(text)
     
     subject = "IT systems and business processes of Interleasing"
     
@@ -123,8 +123,8 @@ def assistant_factory(model: ModelType):
     #assistant_chain = {"messages": lambda txt: anonymize(txt, language="en")} | primary_assistant_prompt | llm.bind_tools(assistant_tools) | (lambda ai_message: deanonymize(ai_message))
     #anon_llm = ChatModelInterceptor(llm, anonymize, deanonymize)
     tooled_llm = llm.bind_tools(assistant_tools)
-    anon_llm = AnonimizedChatModelProxy(tooled_llm, anonymize, deanonymize)
+    #anon_llm = AnonimizedChatModelProxy(tooled_llm, anonymize, deanonymize)
 
-    assistant_chain = primary_assistant_prompt | anon_llm
+    assistant_chain = primary_assistant_prompt | tooled_llm
     
     return assistant_chain, assistant_tools
