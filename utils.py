@@ -1,6 +1,7 @@
 import os
 import config
 from enum import Enum
+from typing import List, Dict, Iterable
 
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import RunnableLambda
@@ -134,3 +135,26 @@ def summarise_image(image_uri: str):
     return response.content
 
 
+def sub_dict(
+    records: List[Dict], 
+    fields: Iterable[str]
+) -> List[Dict]:
+    """
+    Return a new list of dicts that keeps only the keys in *fields*.
+    
+    Parameters
+    ----------
+    records : list[dict]
+        Original list of dictionaries.
+    fields : iterable[str]
+        Keys you want to keep.
+    
+    Returns
+    -------
+    list[dict]
+        List of dictionaries containing only the requested keys.
+    """
+    wanted = set(fields)                    # set → O(1) look-ups
+    return [{k: v for k, v in rec.items()   # keep key-value
+             if k in wanted}                # ...only if key is wanted
+            for rec in records]

@@ -75,8 +75,18 @@ if __name__ == "__main__":
 
     # Let's create an example conversation a user might have with the assistant
     tutorial_questions = [
-        "какие есть ЖК?",
-        "А какие есть?",
+        "В каких ЖК вы предлагаете квартиры?",
+        #"А кто строил?",
+        #"А какие объекты уже сдали?",
+        #"А Александрит ваш?",
+        "Я хочу в районе весенней что-нибудь.",
+        "Не, не весна-парк, другой в этом районе.",
+        "Ну а чё у вас в районе Вессенней?",
+        "А Андерсен в каком районе?",
+        "А когда сдаёте его?",
+        "Расскажи про Андерсен.",
+        "Поджбери мне там квартиру стоимостью до 10 млн и площадью от 40 кв.м. и напиши, какие финансовые усоловия - скидки там и пр",
+        "Давай созвонимся сегодня после 17:00",
     ]
 
     thread_id = str(uuid.uuid4())
@@ -92,7 +102,7 @@ if __name__ == "__main__":
     }
 
     _printed = set()
-    for question in tutorial_questions[:2]:
+    for question in tutorial_questions:
         events = assistant_graph.stream(
             {"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config, stream_mode="values"
         )
@@ -104,21 +114,8 @@ if __name__ == "__main__":
             _print_response(event, _printed)
         print("===================")
 
-    print("RESET")
-    events = assistant_graph.invoke(
-        {"messages": [HumanMessage(content=[{"type": "reset", "text": "RESET"}])]}, config, stream_mode="values"
-    )
-    #for event in events:
-    #    _print_response(event, _printed)
+    #print("RESET")
+    #events = assistant_graph.invoke(
+    #    {"messages": [HumanMessage(content=[{"type": "reset", "text": "RESET"}])]}, config, stream_mode="values"
+    #)
 
-    for question in tutorial_questions[2:]:
-        events = assistant_graph.stream(
-            {"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config, stream_mode="values"
-        )
-        print("USER: ", question)
-        print("-------------------")
-        print("ASSISTANT:")
-        for event in events:
-            #_print_event(event, _printed)
-            _print_response(event, _printed)
-        print("===================")

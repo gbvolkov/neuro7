@@ -1,32 +1,68 @@
-from typing import List, Any, Optional, Dict, Tuple ,TypedDict, Annotated
-import os
+from docx import Document          # pip install python-docx
+import re, json, pathlib
 
-from langchain_community.document_loaders import NotionDirectoryLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_core.vectorstores import InMemoryVectorStore
-from langchain.docstore.document import Document
-from langchain_community.vectorstores import FAISS
+# ---- configurable bits ----------------------------------------------------
+DOCX_PATH  = pathlib.Path("data/neuro7_kb.docx")
+JSON_PATH  = pathlib.Path("data/residential_complexes.json")
 
-import config
+SECTION_ALIASES = {
+    # russian headings that appear in the file ------------------------------
+    "1. Общая информация"                : "general_info",
+    "2. Цены"                            : "pricing",
+    "3. Инфраструктура и преимущества"   : "features",
+    "4. Коммерческие условия"            : "financial_conditions",
+    "4. Коммерческие условия:"           : "financial_conditions",
+    "5. Вопросы о работе менеджеров"     : "managers_info",
+    "5. Вопросы о работе менеджеров:"    : "managers_info",
+}
+# a helper to tolerate trailing colons, extra spaces, etc.
+SEC_RE = re.compile(r"^\s*(\d\.)\s*(.+?)(\s*:)?\s*$")
+# ---------------------------------------------------------------------------
 
+doc   = Document(DOCX_PATH)
+data  = {}
+name  = current_key = None                         # track context
 
-def build_k_notion(notion_folder: str, index_folder: str):
-    loader = NotionDirectoryLoader(notion_folder, encoding="utf-8")
-    docs = loader.load_and_split()
+for para in doc.paragraphs:
+    line = para.text.strip()
+    if not line:
+        continue                                   # skip blank lines
 
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, chunk_overlap=200, add_start_index=True
-    )
-    splits = text_splitter.split_documents(docs)
+    # ---------- new residential-complex block ------------------------------
+    m = re.match(r"^Название:\s*(.+)$", line, flags=re.IGNORECASE)
+    if m:
+        name = m.group(1).strip()
+        data[name] = {k: "" for k in (
+            "general_info", "pricing", "features",
+            "financial_conditions", "managers_info"
+        )}
+        current_key = None                         # reset section pointer
+        continue
 
-    emb_model = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
-    vs = FAISS.from_documents(documents=splits, embedding=emb_model)
+    # ---------- section heading inside that block --------------------------
+    if line in SECTION_ALIASES:
+        current_key = SECTION_ALIASES[line]
+        continue
 
-    vs.save_local(index_folder)
+    # ---------- headings with minor format drift ---------------------------
+    m = SEC_RE.match(line)
+    if m:
+        heading = f"{m.group(1)} {m.group(2)}".strip()
+        if heading in SECTION_ALIASES:
+            current_key = SECTION_ALIASES[heading]
+            continue
 
+    # ---------- regular body paragraph -------------------------------------
+    if name and current_key:
+        data[name][current_key] += line + "\n"
 
+# --------- tidy up newlines -------------------------------------------------
+for comp in data.values():
+    for k, txt in comp.items():
+        comp[k] = txt.rstrip()
 
-if __name__ == "__main__":
-    index_folder = config.NOTION_INDEX_FOLDER 
-    build_k_notion("Notion0code", index_folder)
+# --------- dump to disk ----------------------------------------------------
+with JSON_PATH.open("w", encoding="utf-8") as fp:
+    json.dump(data, fp, ensure_ascii=False, indent=2)
+
+print(f"✓ Wrote {len(data)} complexes to {JSON_PATH}")

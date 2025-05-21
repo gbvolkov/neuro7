@@ -20,8 +20,14 @@ from langchain.agents import initialize_agent, AgentType
 
 #from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
-from retriever import get_search_tool
-from tools import get_support_contact, get_discounts_and_actions, get_customer_manager_contact
+from retriever import search_kb
+from tools import (get_list_of_complexes,
+                   get_developer_info,
+                   get_complex_info,
+                   agree_call
+                   )
+from pricing_agent import get_flats_info_for_complex
+
 from utils import ModelType
 from state import State
 
@@ -54,22 +60,8 @@ class Assistant:
 
 def assistant_factory(model: ModelType):
 
-    # Haiku is faster and cheaper, but less accurate
-    # llm = ChatAnthropic(model="claude-3-haiku-20240307")
-    
-    #processor = Palimpsest(verbose=True)
-
-    #def anonymize(text):
-    #    return processor.anonimize(text)
-
-    #def deanonymize(text):
-    #    return processor.deanonimize(text)
-    
-    subject = "IT systems and business processes of Interleasing"
-    
     with open("prompts/working_prompt.txt", encoding="utf-8") as f:
-        prompt_txt = f.read()
-    prompt = eval(f"f'''{prompt_txt}'''")
+        prompt = f.read()
 
     if model == ModelType.MISTRAL:
         llm = ChatMistralAI(model="mistral-large-latest", temperature=1, frequency_penalty=0.3)
@@ -86,8 +78,7 @@ def assistant_factory(model: ModelType):
             )
     elif model == ModelType.LOCAL:
         with open("prompts/working_prompt_ru_short.txt", encoding="utf-8") as f:
-            prompt_txt = f.read()
-        prompt = eval(f"f'''{prompt_txt}'''")
+            prompt = f.read()
         
         prompt = "Ты бот, который отвечает на вопросы пользователей. Перед ответом извлеки информацию из базы знаний, при помощи инструментов."
         llm = ChatLocalTools(model_id="yandex/YandexGPT-5-Lite-8B-instruct")
@@ -115,9 +106,13 @@ def assistant_factory(model: ModelType):
     #from chat_model_wrapper import AnonimizedChatModelProxy, make_anonymized_tool
 
     #search_kb = get_search_tool(processor)
-    search_kb = get_search_tool()
     assistant_tools = [
-        search_kb
+        search_kb,
+        get_list_of_complexes,
+        get_developer_info,
+        get_complex_info,
+        agree_call,
+        get_flats_info_for_complex
     ]
 
     #assistant_chain = {"messages": lambda txt: anonymize(txt, language="en")} | primary_assistant_prompt | llm.bind_tools(assistant_tools) | (lambda ai_message: deanonymize(ai_message))
