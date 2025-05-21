@@ -27,7 +27,7 @@ accelerate
 grpcio
 yandexcloud
 
-palimpsest@git+https://github.com/gbvolkov/PalimpsestLib.git
+#palimpsest@git+https://github.com/gbvolkov/PalimpsestLib.git
 
 telebot
 telegramify-markdown

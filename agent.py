@@ -68,16 +68,15 @@ def initialize_agent(model: ModelType = ModelType.GPT):
 
 
 if __name__ == "__main__":
-    assistant_graph = initialize_agent(model=ModelType.LOCAL)
+    assistant_graph = initialize_agent(model=ModelType.GPT)
 
     #show_graph(assistant_graph)
     from langchain_core.messages import HumanMessage
 
     # Let's create an example conversation a user might have with the assistant
     tutorial_questions = [
-        "Кто такие кей юзеры?",
-        "Не работает МФУ",
-        "Как отресетить график?"
+        "какие есть ЖК?",
+        "А какие есть?",
     ]
 
     thread_id = str(uuid.uuid4())

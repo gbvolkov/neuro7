@@ -27,7 +27,7 @@ from state import State
 
 from hf_tools.chat_local import ChatLocalTools
 
-from palimpsest import Palimpsest
+#from palimpsest import Palimpsest
 import logging
 logger = logging.getLogger(__name__)
 
@@ -112,7 +112,7 @@ def assistant_factory(model: ModelType):
 
 
     #assistant_chain = primary_assistant_prompt | llm.bind_tools(assistant_tools)
-    from chat_model_wrapper import AnonimizedChatModelProxy, make_anonymized_tool
+    #from chat_model_wrapper import AnonimizedChatModelProxy, make_anonymized_tool
 
     #search_kb = get_search_tool(processor)
     search_kb = get_search_tool()
