@@ -20,7 +20,7 @@ from thread_settings import ThreadSettings
 
 from utils import _send_response, summarise_image, image_to_uri, ModelType
 
-from palimpsest.logger_factory import setup_logging
+#from palimpsest.logger_factory import setup_logging
 
 
 def run_bot():
@@ -162,5 +162,5 @@ def run_bot():
 
 
 if __name__ == '__main__':
-    setup_logging("sd_assistant", project_console_level=logging.DEBUG, other_console_level=logging.WARNING)
+    #setup_logging("sd_assistant", project_console_level=logging.DEBUG, other_console_level=logging.WARNING)
     run_bot()
