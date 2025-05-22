@@ -15,14 +15,6 @@ import re
 # Usage: python yandex_realty_parser.py <input_xml> [<output_db>]
 # Defaults: input_xml='vesna.xml', output_db='realty.db'
 
-def get_args():
-    xml_file = 'data/pricing/7ya.xml'
-    db_file = 'data/pricing/7ya.db'
-    if len(sys.argv) > 1:
-        xml_file = sys.argv[1]
-    if len(sys.argv) > 2:
-        db_file = sys.argv[2]
-    return xml_file, db_file
 
 # XML namespace
 NS = {'y': 'http://webmaster.yandex.ru/schemas/feed/realty/2010-06'}
@@ -136,7 +128,7 @@ def parse_and_load(xml_file, conn):
         # Location and apartment
         loc = offer.find('y:location', namespaces=NS)
         if loc is not None:
-            core.update({
+            core |= {
                 'country': get_text(loc, 'y:country'),
                 'region': get_text(loc, 'y:region'),
                 'locality_name': get_text(loc, 'y:locality-name'),
@@ -144,22 +136,22 @@ def parse_and_load(xml_file, conn):
                 'address': get_text(loc, 'y:address'),
                 'apartment': parse_apartment(get_text(loc, 'y:apartment')),
                 'latitude': parse_float(get_text(loc, 'y:latitude')),
-                'longitude': parse_float(get_text(loc, 'y:longitude'))
-            })
+                'longitude': parse_float(get_text(loc, 'y:longitude')),
+            }
         # Price
         price = offer.find('y:price', namespaces=NS)
         if price is not None:
-            core.update({
+            core |= {
                 'price_value': parse_float(get_text(price, 'y:value')),
-                'price_currency': get_text(price, 'y:currency')
-            })
+                'price_currency': get_text(price, 'y:currency'),
+            }
         # Area breakdown
         core['area_unit'] = get_text(offer, 'y:area/y:unit')
         core['area_total'] = parse_float(get_text(offer, 'y:area/y:value'))
         core['area_live'] = parse_float(get_text(offer, 'y:living-space'))
         core['area_kitchen'] = parse_float(get_text(offer, 'y:kitchen-space'))
         # Structure and building info
-        core.update({
+        core |= {
             'rooms': parse_int(get_text(offer, 'y:rooms')),
             'floor': parse_int(get_text(offer, 'y:floor')),
             'floors_total': parse_int(get_text(offer, 'y:floors-total')),
@@ -171,8 +163,8 @@ def parse_and_load(xml_file, conn):
             'renovation': get_text(offer, 'y:renovation'),
             'new_flat': 1 if get_text(offer, 'y:new-flat') == 'true' else 0,
             'elevator': 1 if get_text(offer, 'y:elevator') == 'yes' else 0,
-            'parking': get_text(offer, 'y:parking')
-        })
+            'parking': get_text(offer, 'y:parking'),
+        }
         # Sales agent
         agent = offer.find('y:sales-agent', namespaces=NS)
         if agent is not None:

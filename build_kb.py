@@ -28,10 +28,8 @@ for para in doc.paragraphs:
     if not line:
         continue                                   # skip blank lines
 
-    # ---------- new residential-complex block ------------------------------
-    m = re.match(r"^Название:\s*(.+)$", line, flags=re.IGNORECASE)
-    if m:
-        name = m.group(1).strip()
+    if m := re.match(r"^Название:\s*(.+)$", line, flags=re.IGNORECASE):
+        name = m[1].strip()
         data[name] = {k: "" for k in (
             "general_info", "pricing", "features",
             "financial_conditions", "managers_info"
@@ -44,10 +42,8 @@ for para in doc.paragraphs:
         current_key = SECTION_ALIASES[line]
         continue
 
-    # ---------- headings with minor format drift ---------------------------
-    m = SEC_RE.match(line)
-    if m:
-        heading = f"{m.group(1)} {m.group(2)}".strip()
+    if m := SEC_RE.match(line):
+        heading = f"{m[1]} {m[2]}".strip()
         if heading in SECTION_ALIASES:
             current_key = SECTION_ALIASES[heading]
             continue
