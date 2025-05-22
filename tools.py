@@ -37,8 +37,11 @@ Returns information of the residential complex by id.
 Args:
     complex_id: id of the complex
     list_of_fields: list of fields to return. Available fields: general_info, pricing, features, financial_conditions, managers_info"""
-
-    return sub_dict([complexes_idx[complex_id]], list_of_fields)[0]
+    try:
+        found_complex = complexes_idx[complex_id]
+    except Exception:
+        found_complex = complexes_idx['vesna']
+    return sub_dict([found_complex], list_of_fields)[0]
 
 
 @tool

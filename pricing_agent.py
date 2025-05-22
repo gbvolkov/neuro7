@@ -22,7 +22,7 @@ class State(TypedDict):
     result: str
     answer: str
 
-llm = init_chat_model("gpt-4.1-nano", model_provider="openai")
+llm = init_chat_model("gpt-4.1-mini", model_provider="openai")
 
 system_message = """
 Given an input question, create a syntactically correct {dialect} query to
@@ -38,6 +38,9 @@ Pay attention to use only the column names that you can see in the schema
 description. Be careful to not query for columns that do not exist. Also,
 pay attention to which column is in which table.
 
+Never use the following fields for the query: category, property_type, building_state. 
+Field renovation can be one of: 'черновая отделка' or 'под ключ'
+
 Only use the following tables:
 {table_info}
 """
@@ -47,6 +50,8 @@ user_prompt = "Question: {input}"
 query_prompt_template = ChatPromptTemplate(
     [("system", system_message), ("user", user_prompt)]
 )
+
+
 
 class QueryOutput(TypedDict):
     """Generated SQL query."""

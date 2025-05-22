@@ -15,6 +15,12 @@ def add_messages_no_img(msgs1: Messages, msgs2: Messages) -> Messages:
 
     return add_messages(msgs1, msgs2)
 
+class UserInfo(TypedDict):
+    user_name: str
+    phone_number: str
+    purpose: str
+    interest: str
+
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages_no_img]
-    user_info: str
+    user_info: UserInfo

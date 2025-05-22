@@ -32,7 +32,7 @@ def run_bot():
     def send_welcome(message):
         user_id = message.from_user.id
         chat_id = message.chat.id
-        chats[chat_id] = ThreadSettings(user_id=user_id, chat_id=chat_id, model=ModelType.YA)
+        chats[chat_id] = ThreadSettings(user_id=user_id, chat_id=chat_id, model=ModelType.GPT)
 
         assistant = chats[chat_id].assistant
         #resetting memory
@@ -130,10 +130,10 @@ def run_bot():
 
 
         assistant = chats[chat_id].assistant
-        if not message.reply_to_message:
-            assistant.invoke(
-                {"messages": [HumanMessage(content=[{"type": "reset", "text": "RESET"}])]}, chats[chat_id].get_config(), stream_mode="values"
-            )
+        #if not message.reply_to_message:
+        #    assistant.invoke(
+        #        {"messages": [HumanMessage(content=[{"type": "reset", "text": "RESET"}])]}, chats[chat_id].get_config(), stream_mode="values"
+        #    )
 
         messages = HumanMessage(
             content=[{"type": "text", "text": query}] + image_uri
