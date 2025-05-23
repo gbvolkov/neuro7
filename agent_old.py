@@ -18,15 +18,6 @@ from assistant import Assistant, assistant_factory
 from utils import create_tool_node_with_fallback, show_graph, _print_event, _print_response
 from user_info import user_info
 
-from kb_agent import kb_agent
-from contact_agent import contact_agent
-from pricing_agent import create_flat_info_retriever
-
-from langgraph.prebuilt import create_react_agent
-from langgraph_supervisor import create_supervisor
-from langchain.chat_models import init_chat_model
-
-
 def reset_memory_condition(state: State) -> str:
     if state["messages"][-1].content[0].get("type") == "reset":
         return "reset_memory"
@@ -44,41 +35,40 @@ def reset_memory(state: State) -> State:
     }
 
 def initialize_agent(model: ModelType = ModelType.GPT):
-    db_vesna = create_flat_info_retriever("vesna")
-    db_andersen = create_flat_info_retriever("andersen")
-    db_7ya = create_flat_info_retriever("7ya")
-    with open("prompts/working_prompt_super.txt", encoding="utf-8") as f:
-        prompt_txt = f.read()
-    supervisor_agent = create_supervisor(
-        model=init_chat_model("openai:gpt-4.1"),
-        agents=[kb_agent, contact_agent, db_vesna, db_andersen, db_7ya],
-        prompt=prompt_txt,
-        add_handoff_back_messages=True,
-        output_mode="full_history",
-    ).compile(name="supervisor", debug = True)
+    llm, assistant_tools = assistant_factory(model)
 
 
-    memory = MemorySaver()
-    agent = (
-        StateGraph(State)
-        .add_node("fetch_user_info", user_info)
-        .add_node("reset_memory", reset_memory)
-        .add_node("assistant", supervisor_agent)
-        .add_edge(START, "fetch_user_info")
-        .add_conditional_edges(
-            "fetch_user_info",
-            reset_memory_condition,
-        )
-        .add_edge("reset_memory", END)
-    ).compile(checkpointer=memory)
+
+
+    builder = StateGraph(State)
+    # Define nodes: these do the work
+    builder.add_node("fetch_user_info", user_info)
+    builder.add_node("reset_memory", reset_memory)
+    builder.add_node("assistant", Assistant(llm))
+    builder.add_node("tools", create_tool_node_with_fallback(assistant_tools))
+    # Define edges: these determine how the control flow moves
+
+    builder.add_edge(START, "fetch_user_info")
+    builder.add_conditional_edges(
+        "fetch_user_info",
+        reset_memory_condition,
+    )
+    builder.add_edge("reset_memory", END)
+
+    builder.add_conditional_edges(
+        "assistant",
+        tools_condition,
+    )
+    builder.add_edge("tools", "assistant")
 
     # The checkpointer lets the graph persist its state
     # this is a complete memory for the entire graph.
-    return agent
+    memory = MemorySaver()
+    return builder.compile(checkpointer=memory)
 
 
 if __name__ == "__main__":
-    agent = initialize_agent(model=ModelType.GPT)
+    assistant_graph = initialize_agent(model=ModelType.GPT)
 
     #show_graph(assistant_graph)
     from langchain_core.messages import HumanMessage
@@ -113,7 +103,7 @@ if __name__ == "__main__":
 
     _printed = set()
     for question in tutorial_questions:
-        events = agent.stream(
+        events = assistant_graph.stream(
             {"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config, stream_mode="values"
         )
         print("USER: ", question)

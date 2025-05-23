@@ -26,7 +26,7 @@ from tools import (get_list_of_complexes,
                    get_complex_info,
                    agree_call
                    )
-from pricing_agent import get_flats_info_for_complex
+from pricing_tools import get_flats_info_for_complex
 
 from utils import ModelType
 from state import State

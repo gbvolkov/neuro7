@@ -10,6 +10,10 @@ from langchain_community.utilities import SQLDatabase
 
 from langchain_core.tools import tool
 
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph, START
+from langgraph.prebuilt import tools_condition
+
 
 db_7ya = SQLDatabase.from_uri("sqlite:///data/pricing/7ya.db")
 db_vesna = SQLDatabase.from_uri("sqlite:///data/pricing/vesna.db")
@@ -38,7 +42,7 @@ Pay attention to use only the column names that you can see in the schema
 description. Be careful to not query for columns that do not exist. Also,
 pay attention to which column is in which table.
 
-Never use the following fields for the query: category, property_type, building_state. 
+Never use the following fields for the query: category, property_type, building_state.
 Field renovation can be one of: 'черновая отделка' or 'под ключ'
 
 Only use the following tables:
@@ -59,76 +63,83 @@ class QueryOutput(TypedDict):
     query: Annotated[str, ..., "Syntactically valid SQL query."]
 
 
-def write_query(state: State, db: SQLDatabase = db_vesna):
-    """Generate SQL query to fetch information."""
-    prompt = query_prompt_template.invoke(
-        {
-            "dialect": db.dialect,
-            "top_k": 10,
-            "table_info": db.get_table_info(),
-            "input": state["question"],
-        }
-    )
-    structured_llm = llm.with_structured_output(QueryOutput)
-    result = structured_llm.invoke(prompt)
-    return {"query": result["query"]}
+def create_flat_info_retriever(complex_id: str):
+    complex_id = complex_id
 
-
-def execute_query(state: State, db: SQLDatabase = db_vesna):
-    """Execute SQL query."""
-    execute_query_tool = QuerySQLDatabaseTool(db=db)
-    return {"result": execute_query_tool.invoke(state["query"])}
-
-def generate_answer(state: State):
-    """Answer question using retrieved information as context."""
-    prompt = (
-        "Given the following user question, corresponding SQL query, "
-        "and SQL result, answer the user question.\n\n"
-        f'Question: {state["question"]}\n'
-        f'SQL Query: {state["query"]}\n'
-        f'SQL Result: {state["result"]}'
-    )
-    response = llm.invoke(prompt)
-    return {"answer": response.content}
-
- 
-@tool
-def get_flats_info_for_complex(complex_id: str, user_question: str) -> State:
-    """Возвращает информацию по квартирам в определённом жилом комплексе (ЖК).
-Returns information of apartments in the residential complex by id.
-
-Args:
-    complex_id: id of the complex
-    user_question: the question user is interested to get information about."""
     if complex_id == "vesna":
         db = db_vesna
     elif complex_id == "7ya":
         db = db_7ya
     elif complex_id == "andersen":
         db = db_andersen
-    else:
-        raise ValueError(f"Unknown complex id: {complex_id}")
-    state: State = {"question": user_question}
-    state["query"] = write_query(state, db)
-    state["result"] = execute_query(state, db)
-    state["answer"] = generate_answer(state)
 
-    return state
+    def write_query(state: State):
+        """Generate SQL query to fetch information."""
+        try:
+            prompt = query_prompt_template.invoke(
+                {
+                    "dialect": db.dialect,
+                    "top_k": 10,
+                    "table_info": db.get_table_info(),
+                    "input": state["question"],
+                }
+            )
+            structured_llm = llm.with_structured_output(QueryOutput)
+            result = structured_llm.invoke(prompt)
+            return {"query": result["query"]}
+        except:
+            return {"query": ""}
 
 
-#from langgraph.graph import START, StateGraph
+    def execute_query(state: State):
+        """Execute SQL query."""
+        execute_query_tool = QuerySQLDatabaseTool(db=db)
+        return {"result": execute_query_tool.invoke(state["query"])}
 
-#graph_builder = StateGraph(State).add_sequence(
-#    [write_query, execute_query, generate_answer]
-#)
-#graph_builder.add_edge(START, "write_query")
-#graph = graph_builder.compile()
+    def generate_answer(state: State):
+        """Answer question using retrieved information as context."""
+        prompt = (
+            "Given the following user question, corresponding SQL query, "
+            "and SQL result, answer the user question.\n"
+            "Do not include into response any technical fields (for example:ID).\n\n"
+            f'Question: {state["question"]}\n'
+            f'SQL Query: {state["query"]}\n'
+            f'SQL Result: {state["result"]}'
+        )
+        response = llm.invoke(prompt)
+        return {"answer": response.content}
+
+    flat_info_retriever = (
+        StateGraph(State)
+        .add_sequence([write_query, execute_query, generate_answer])
+        .add_edge(START, "write_query")
+    ).compile(name=f"{complex_id}_flat_info_retriever"
+              ,debug = True)
+
+    return flat_info_retriever
 
 
-#query = write_query({"question": "Мне нужны все квартиры стоимостью до 10 млн и площадью от 40 кв.м."})
+#    @tool
+#    def retrieve_flat_info(user_question: str):
+#        """Возвращает информацию по квартирам в определённом жилом комплексе (ЖК).
+#Returns information of apartments in the residential complex by id.
+#
+#Args:
+#    user_question: the question user is interested to get information about."""
+#        
+#        response = flat_info_retriever.invoke({"question": user_question})
+#        if isinstance(response, dict):
+#            answer =  response.get("answer")
+#        else:
+#            answer =  response
+#        return answer
+#
+#    return retrieve_flat_info
 
-#print(execute_query(query))
-#for step in graph.stream(
-#    {"question": "Хочу купить квартиру стоимостью до 10 млн и площадью от 40 кв.м."}, stream_mode="updates"
-#):
-#    print(step)
+
+if __name__ == "__main__":
+    flat_info_retriever = create_flat_info_retriever("vesna")
+    result = flat_info_retriever.invoke({"question": "Мне нужны все квартиры стоимостью до 10 млн и площадью от 40 кв.м."})
+    #retrieve_flat_info = create_flat_info_retriever("vesna")
+    #result = retrieve_flat_info("Мне нужны все квартиры стоимостью до 10 млн и площадью от 40 кв.м.")
+    print(result)
