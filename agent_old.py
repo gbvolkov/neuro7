@@ -68,7 +68,7 @@ def initialize_agent(model: ModelType = ModelType.GPT):
 
 
 if __name__ == "__main__":
-    assistant_graph = initialize_agent(model=ModelType.GPT)
+    agent = initialize_agent(model=ModelType.GPT)
 
     #show_graph(assistant_graph)
     from langchain_core.messages import HumanMessage
@@ -84,8 +84,9 @@ if __name__ == "__main__":
         "Ну а чё у вас в районе Вессенней?",
         "А Андерсен в каком районе?",
         "А когда сдаёте его?",
-        "Расскажи про Андерсен.",
-        "Поджбери мне там квартиру стоимостью до 10 млн и площадью от 40 кв.м. и напиши, какие финансовые усоловия - скидки там и пр",
+        "Расскажи подробнее. У меня сын. Чё там для него есть? Ну вообще - там магазы, чё-нить такое",
+        "Подбери мне там квартиру стоимостью до 10 млн и площадью от 40 кв.м. и напиши, какие финансовые усоловия - скидки там и пр",
+        "А можешь скинуть список вариантов квартир?",
         "Давай созвонимся сегодня после 17:00",
     ]
 
@@ -101,21 +102,14 @@ if __name__ == "__main__":
         }
     }
 
-    _printed = set()
     for question in tutorial_questions:
-        events = assistant_graph.stream(
-            {"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config, stream_mode="values"
-        )
+
+        response = agent.invoke({"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config)
+
+        answer = response['messages'][-1].content
         print("USER: ", question)
         print("-------------------")
         print("ASSISTANT:")
-        for event in events:
-            #_print_event(event, _printed)
-            _print_response(event, _printed)
+        print(answer)
         print("===================")
-
-    #print("RESET")
-    #events = assistant_graph.invoke(
-    #    {"messages": [HumanMessage(content=[{"type": "reset", "text": "RESET"}])]}, config, stream_mode="values"
-    #)
 

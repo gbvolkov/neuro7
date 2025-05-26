@@ -1,4 +1,5 @@
 from langchain_core.tools import tool
+
 from utils import sub_dict
 from datetime import datetime
 import json
@@ -10,7 +11,7 @@ complexes_idx = {rec["id"]: rec for rec in complexes}
 def get_list_of_complexes() -> list[dict]:
     """Возвращает список жилых комплексов (ЖК), доступных к продаже.
 Returns list of residential complexes, available for sale."""
-    return sub_dict(complexes, ["id", "name", "district", "ready_date", "number_of_houses", "level"])
+    return sub_dict(complexes, ["id", "name", "alternative_name", "district", "ready_date", "number_of_houses", "level"])
 
 @tool
 def get_developer_info() -> dict:
@@ -36,7 +37,7 @@ Returns information of the residential complex by id.
 
 Args:
     complex_id: id of the complex
-    list_of_fields: list of fields to return. Available fields: general_info, pricing, features, financial_conditions, managers_info"""
+    list_of_fields: list of fields to return. Available fields: general_info, features, financial_conditions, managers_info"""
     try:
         found_complex = complexes_idx[complex_id]
     except Exception:
@@ -58,3 +59,4 @@ Args:
         return {"time_slot": "evening"}
     else:
         return {"time_slot": "tomorrow"}
+

@@ -21,6 +21,27 @@ class UserInfo(TypedDict):
     purpose: str
     interest: str
 
+# state.py  (new file or extend the existing State TypedDict)
+
+from typing_extensions import TypedDict, Literal, NotRequired
+
+class FlatFilters(TypedDict, total=False):
+    rooms: NotRequired[int]          # how many flats / rooms are requested
+    area_min: NotRequired[float]
+    area_max: NotRequired[float]
+    price_min: NotRequired[int]
+    price_max: NotRequired[int]
+
+class CustomerCtx(TypedDict):
+    last_question: str
+    complex: str | None
+    flat_filters: FlatFilters
+    call_requested: bool
+    time_slot_requested: str | None   # free-form, keep it text – parsing later
+    time_slot_agreed: str | None      # filled only after contact_agent responds
+
+
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages_no_img]
+    #customer_ctx: CustomerCtx
     user_info: UserInfo

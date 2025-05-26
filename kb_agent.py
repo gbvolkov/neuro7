@@ -7,13 +7,13 @@ from tools import (get_list_of_complexes,
                    complexes
                    )
 
-complexes_names = "',".join([name["name"] for name in sub_dict(complexes, ["name"])])
+complexes_names = "',".join([f"{name['name']} (aka {name['alternative_name']})" for name in sub_dict(complexes, ["name", "alternative_name"])])
 
 kb_agent = create_react_agent(
     model="openai:gpt-4.1-mini",
     tools=[get_list_of_complexes, get_developer_info, get_complex_info],# search_kb],
     prompt=(
-        "You are an agent retrieving information about building complexes.\n\n"
+        "You are an agent retrieving information about building complexes. You can return information about (1) building complexes available for sales; (2) developers; (3) facilities available for the complex; (4) financial conditions like loan availability, discounts and so on.\n\n"
         "INSTRUCTIONS:\n"
         f"- Assist ONLY with tasks related to retrieval information about building complexes {complexes_names}\n"
         "- Do not answer questions related to pricing and details of flats available within building complexes\n"

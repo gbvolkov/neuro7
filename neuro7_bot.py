@@ -156,9 +156,12 @@ def run_bot():
         except HTTPException as e:
             logging.error(f"HTTP error: {e}")
             time.sleep(5)
-        #except Exception as e:
-        #    logging.error(f"Unexpected error in bot polling: {e}")
-        #    time.sleep(5)
+        except ConnectionError:
+            logging.error(f"Connection error: {e}")
+            time.sleep(5)
+        except Exception as e:
+            logging.error(f"Unexpected error in bot polling: {e}")
+            time.sleep(5)
 
 
 if __name__ == '__main__':

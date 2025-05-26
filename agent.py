@@ -20,12 +20,18 @@ from user_info import user_info
 
 from kb_agent import kb_agent
 from contact_agent import contact_agent
-from pricing_agent import create_flat_info_retriever
+from pricing_agent import create_flat_info_retriever, get_retrieval_agent
+from pricing_tools import get_flats_info_for_complex
+from supervisor_tools import create_pricing_handoff_tool, create_handoff_tool_no_history
+from intent_extractor import update_customer_ctx
 
 from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
+from langgraph_supervisor.handoff import create_handoff_tool
 from langchain.chat_models import init_chat_model
+from langchain_openai import ChatOpenAI
 
+main_llm = ChatOpenAI(model="gpt-4.1-mini", temperature=1)
 
 def reset_memory_condition(state: State) -> str:
     if state["messages"][-1].content[0].get("type") == "reset":
@@ -43,38 +49,56 @@ def reset_memory(state: State) -> State:
         "messages": [RemoveMessage(id=mid) for mid in all_msg_ids]
     }
 
+
 def initialize_agent(model: ModelType = ModelType.GPT):
-    db_vesna = create_flat_info_retriever("vesna")
-    db_andersen = create_flat_info_retriever("andersen")
-    db_7ya = create_flat_info_retriever("7ya")
+    #db_vesna = create_flat_info_retriever("vesna")
+    #db_andersen = create_flat_info_retriever("andersen")
+    #db_7ya = create_flat_info_retriever("7ya")
+    db_vesna = get_retrieval_agent("vesna")
+    db_andersen = get_retrieval_agent("andersen")
+    db_7ya = get_retrieval_agent("7ya")
+
+
+    ho_vesna = create_handoff_tool_no_history("vesna_flat_info_retriever")
+    ho_andersen = create_handoff_tool_no_history("andersen_flat_info_retriever")
+    ho_7ya = create_handoff_tool_no_history("7ya_flat_info_retriever")
+
+    ho_tools = [
+        create_handoff_tool_no_history(agent_name = "kb_agent"),
+        create_handoff_tool(agent_name = "contact_agent"),
+        #ho_vesna,
+        #ho_andersen,
+        #ho_7ya,
+        get_flats_info_for_complex
+    ]
+
     with open("prompts/working_prompt_super.txt", encoding="utf-8") as f:
         prompt_txt = f.read()
     supervisor_agent = create_supervisor(
         model=init_chat_model("openai:gpt-4.1"),
-        agents=[kb_agent, contact_agent, db_vesna, db_andersen, db_7ya],
+        #agents=[kb_agent, contact_agent, db_vesna, db_andersen, db_7ya],
+        agents=[kb_agent, contact_agent],
         prompt=prompt_txt,
-        add_handoff_back_messages=True,
-        output_mode="full_history",
-    ).compile(name="supervisor", debug = True)
-
+        tools=ho_tools,
+        add_handoff_back_messages=False,
+        output_mode="last_message",
+        parallel_tool_calls=True
+    ).compile(name="supervisor")#, debug = True)
 
     memory = MemorySaver()
-    agent = (
+    return (
         StateGraph(State)
         .add_node("fetch_user_info", user_info)
+        .add_node("intent_extract", update_customer_ctx)
         .add_node("reset_memory", reset_memory)
         .add_node("assistant", supervisor_agent)
         .add_edge(START, "fetch_user_info")
-        .add_conditional_edges(
-            "fetch_user_info",
-            reset_memory_condition,
-        )
+        #.add_edge("fetch_user_info", "intent_extract") 
+        #.add_conditional_edges("intent_extract", reset_memory_condition)
+        .add_conditional_edges("fetch_user_info", reset_memory_condition)
         .add_edge("reset_memory", END)
     ).compile(checkpointer=memory)
 
-    # The checkpointer lets the graph persist its state
-    # this is a complete memory for the entire graph.
-    return agent
 
 
 if __name__ == "__main__":
@@ -85,6 +109,7 @@ if __name__ == "__main__":
 
     # Let's create an example conversation a user might have with the assistant
     tutorial_questions = [
+        "Какие есть двушки в 7Я?",
         "В каких ЖК вы предлагаете квартиры?",
         #"А кто строил?",
         #"А какие объекты уже сдали?",
@@ -94,8 +119,9 @@ if __name__ == "__main__":
         "Ну а чё у вас в районе Вессенней?",
         "А Андерсен в каком районе?",
         "А когда сдаёте его?",
-        "Расскажи про Андерсен.",
-        "Поджбери мне там квартиру стоимостью до 10 млн и площадью от 40 кв.м. и напиши, какие финансовые усоловия - скидки там и пр",
+        "Расскажи подробнее. У меня сын. Чё там для него есть? Ну вообще - там магазы, чё-нить такое",
+        "Подбери мне там квартиру стоимостью до 10 млн и площадью от 40 кв.м. и напиши, какие финансовые усоловия - скидки там и пр",
+        "А можешь скинуть список вариантов квартир?",
         "Давай созвонимся сегодня после 17:00",
     ]
 
@@ -111,17 +137,22 @@ if __name__ == "__main__":
         }
     }
 
-    _printed = set()
+    #_printed = set()
     for question in tutorial_questions:
-        events = agent.stream(
-            {"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config, stream_mode="values"
-        )
+
+        response = agent.invoke({"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config)
+
+        #events = agent.stream(
+        #    {"messages": [HumanMessage(content=[{"type": "text", "text": question}])]}, config, stream_mode="values"
+        #)
+        answer = response['messages'][-1].content
         print("USER: ", question)
         print("-------------------")
         print("ASSISTANT:")
-        for event in events:
-            #_print_event(event, _printed)
-            _print_response(event, _printed)
+        print(answer)
+        #for event in events:
+        #    #_print_event(event, _printed)
+        #    _print_response(event, _printed)
         print("===================")
 
     #print("RESET")

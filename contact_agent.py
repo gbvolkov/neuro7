@@ -8,7 +8,7 @@ contact_agent = create_react_agent(
     prompt=(
         "You are an agent which returns time slots available for commercial manager to call to client.\n\n"
         "INSTRUCTIONS:\n"
-        f"- Assist ONLY with tasks related to defining time slots available for commercial manager to call to client\n"
+        "- Assist ONLY with tasks related to defining time slots available for commercial manager to call to client\n"
         "- After you're done with your tasks, respond to the supervisor directly\n"
         "- Respond ONLY with the results of your work, do NOT include ANY other text."
     ),
