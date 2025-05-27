@@ -36,8 +36,8 @@ from langchain_openai import ChatOpenAI
 from langchain_gigachat import GigaChat
 from langchain_mistralai import ChatMistralAI
 
-#agent_llm = ChatOpenAI(model="gpt-4.1-mini", temperature=1)
-agent_llm = ChatMistralAI(model="mistral-large-latest", temperature=1, frequency_penalty=0.3)
+agent_llm = ChatOpenAI(model="gpt-4.1", temperature=1)
+#agent_llm = ChatMistralAI(model="mistral-large-latest", temperature=1, frequency_penalty=0.3)
 
 #agent_llm = GigaChat(
 #            credentials=config.GIGA_CHAT_AUTH, 

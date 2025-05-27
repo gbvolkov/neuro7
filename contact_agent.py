@@ -2,7 +2,7 @@ from langgraph.prebuilt import create_react_agent
 from tools import agree_call
 from langchain_openai import ChatOpenAI
 
-agent_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=1)
+agent_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=0)
 
 contact_agent = create_react_agent(
     model=agent_llm, #"openai:gpt-4.1-mini",

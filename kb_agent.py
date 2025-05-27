@@ -13,13 +13,13 @@ from langchain_openai import ChatOpenAI
 
 complexes_names = "',".join([f"{name['name']} (aka {name['alternative_name']})" for name in sub_dict(complexes, ["name", "alternative_name"])])
 
-#agent_llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
-agent_llm = GigaChat(
-            credentials=config.GIGA_CHAT_AUTH, 
-            model="GigaChat-Pro",
-            verify_ssl_certs=False,
-            temperature=0,
-            scope = config.GIGA_CHAT_SCOPE)
+agent_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=0)
+#agent_llm = GigaChat(
+#            credentials=config.GIGA_CHAT_AUTH, 
+#            model="GigaChat-Pro",
+#            verify_ssl_certs=False,
+#            temperature=0,
+#            scope = config.GIGA_CHAT_SCOPE)
 
 kb_agent = create_react_agent(
     model=agent_llm, #"openai:gpt-4.1-mini",

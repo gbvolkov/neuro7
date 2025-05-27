@@ -16,13 +16,13 @@ from langgraph.prebuilt import tools_condition, create_react_agent
 from langchain_openai import ChatOpenAI
 from langchain_gigachat import GigaChat
 
-#agent_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=1)
-agent_llm = GigaChat(
-            credentials=config.GIGA_CHAT_AUTH, 
-            model="GigaChat-Pro",
-            verify_ssl_certs=False,
-            temperature=0,
-            scope = config.GIGA_CHAT_SCOPE)
+agent_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=0)
+#agent_llm = GigaChat(0
+#            credentials=config.GIGA_CHAT_AUTH, 
+#            model="GigaChat-Pro",
+#            verify_ssl_certs=False,
+#            temperature=0,
+#            scope = config.GIGA_CHAT_SCOPE)
 
 llm_query_gen = ChatOpenAI(model="gpt-4.1", temperature=0)
 #llm_query_gen = ChatOpenAI(model="o4-mini")
