@@ -172,8 +172,10 @@ def create_flat_info_retriever(complex_id: str):
         StateGraph(State)
         .add_sequence([write_query, execute_query, generate_answer])
         .add_edge(START, "write_query")
-    ).compile(name=f"{complex_id}_flat_info_retriever")
-              #,debug = True)
+    ).compile(
+        name=f"{complex_id}_flat_info_retriever",
+        debug=config.DEBUG_WORKFLOW,
+    )
 
     return flat_info_retriever
 
@@ -210,7 +212,7 @@ def get_retrieval_agent(complex_id: str):
         tools=[retrieval_tool],# search_kb],
         prompt=prompt,
         name=f"{complex_id}_flat_info_retriever",
-        debug=True
+        debug=config.DEBUG_WORKFLOW,
     )
 
 if __name__ == "__main__":

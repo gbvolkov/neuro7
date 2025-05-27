@@ -33,4 +33,5 @@ kb_agent = create_react_agent(
         "- Respond ONLY with the results of your work, do NOT include ANY other text."
     ),
     name="kb_agent",
+    debug=config.DEBUG_WORKFLOW,
 )

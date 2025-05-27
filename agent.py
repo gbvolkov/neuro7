@@ -20,7 +20,6 @@ from user_info import user_info
 
 import config
 
-
 from kb_agent import kb_agent
 from contact_agent import contact_agent
 from pricing_agent import create_flat_info_retriever, get_retrieval_agent
@@ -35,6 +34,8 @@ from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
 from langchain_gigachat import GigaChat
 from langchain_mistralai import ChatMistralAI
+
+
 
 agent_llm = ChatOpenAI(model="gpt-4.1", temperature=1)
 #agent_llm = ChatMistralAI(model="mistral-large-latest", temperature=1, frequency_penalty=0.3)
@@ -111,7 +112,7 @@ def initialize_agent(model: ModelType = ModelType.GPT):
         output_mode="last_message",
         parallel_tool_calls=False,
         supervisor_name="neuro7"
-    ).compile(name="neuro7", debug = True)
+    ).compile(name="neuro7", debug = config.DEBUG_WORKFLOW)
 
     memory = MemorySaver()
     return (
@@ -125,7 +126,7 @@ def initialize_agent(model: ModelType = ModelType.GPT):
         #.add_conditional_edges("intent_extract", reset_memory_condition)
         .add_conditional_edges("fetch_user_info", reset_memory_condition)
         .add_edge("reset_memory", END)
-    ).compile(checkpointer=memory, debug=True)
+    ).compile(checkpointer=memory, debug=config.DEBUG_WORKFLOW)
 
 
 

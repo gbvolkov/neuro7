@@ -69,3 +69,6 @@ NOTION_INDEX_FOLDER = os.environ.get('NOTION_INDEX_FOLDER') or "./data/notion_id
 CHATS_INDEX_FOLDER = os.environ.get('CHATS_INDEX_FOLDER') or "./data/chats_idx"
 ASSISTANT_INDEX_FOLDER = os.environ.get('ASSISTANT_INDEX_FOLDER') or "./data/index/neuro_index"
 RERANKING_MODEL = os.environ.get('RERANKING_MODEL') or '/models/bge-reranker-large'
+
+
+DEBUG_WORKFLOW = (os.environ.get('DEBUG_WORKFLOW', default='False').lower() == 'true')

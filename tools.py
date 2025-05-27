@@ -16,7 +16,9 @@ Returns list of residential complexes, available for sale."""
 @tool
 def get_developer_info() -> dict:
     """Возвращает информацию о застройщике.
-Returns information of the developer."""
+ВАЖНО: Этот инструмент не возвращает информацию о жилых комплексах!!!
+Returns information of the developer.
+IMPORTANT: This tool does not contain information on building complexes!!!"""
     return {"name": "ГК Новый Дом", 
             "address": ": ул. Жигура, 26 (ТЦ «Семёрочка», 2 этаж)",
             "working_hours": "пн-чт: 10:00 – 19:00; пт: 10:00 – 17:00; сб: 10:00 – 16:00; вс: выходной",
@@ -36,12 +38,12 @@ def get_complex_info(complex_id: str, list_of_fields: list[str]) -> dict:
 Returns information of the residential complex by id.
 
 Args:
-    complex_id: id of the complex
+    complex_id: id of the complex. Can be one of the following values: vesna, 7ya, andersen. 
     list_of_fields: list of fields to return. Available fields: general_info, features, financial_conditions, managers_info"""
     try:
         found_complex = complexes_idx[complex_id]
     except Exception:
-        found_complex = complexes_idx['vesna']
+        found_complex = {} #complexes_idx['vesna']
     return sub_dict([found_complex], list_of_fields)[0]
 
 
