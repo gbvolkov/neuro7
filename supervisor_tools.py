@@ -9,6 +9,7 @@ from langgraph.types import Send
 from langgraph.graph import MessagesState
 
 from typing import Annotated
+from state import CustomerCtx
 
 def newest_user_text(messages: list) -> str | None:
     for m in reversed(messages):
@@ -48,18 +49,28 @@ def create_pricing_handoff_tool(agent_name: str):
     return _handoff_tool
 
 
-def create_handoff_tool_no_history(agent_name: str):
+def create_handoff_tool_no_history(agent_name: str, agent_purpose: str | None = None):
     name = f"transfer_to_{agent_name}"
     @tool(name,
-          description=f"Handoff to {agent_name} and provide the user question about flats' details for a specific building complex.")
+          description=f"Handoff to {agent_name} to {agent_purpose or "execute agent specific tasks."} .")
     def _handoff_tool(
-        state: Annotated[MessagesState, InjectedState]
+        state: Annotated[MessagesState, InjectedState],
+        tool_call_id: Annotated[str, InjectedToolCallId],
+        task: Annotated[str, "Task delegated to agent"],
+        context: Annotated[CustomerCtx, "Context of the task execution"],
     ) -> Command:
-        # highlight-next-line
+        tool_message = {
+            "role": "tool",
+            "content": f"Successfully transferred to {agent_name}",
+            "name": name,
+            "tool_call_id": tool_call_id,
+        }
         question = newest_user_text(state.get("messages", []))
-        agent_input = {"messages": HumanMessage(content=question)}
+        content = f"User request: {question}\nPerform this task to address user request: {task}"
+        agent_input = {"messages": HumanMessage(content=content)}
         return Command(
             goto=[Send(agent_name, agent_input)],
+            update={**state, "messages": state["messages"] + [tool_message]},
             graph=Command.PARENT
         )
     _handoff_tool.metadata = {METADATA_KEY_HANDOFF_DESTINATION: agent_name}

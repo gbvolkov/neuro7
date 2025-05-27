@@ -23,7 +23,7 @@ class UserInfo(TypedDict):
 
 # state.py  (new file or extend the existing State TypedDict)
 
-from typing_extensions import TypedDict, Literal, NotRequired
+from typing_extensions import TypedDict, Literal, NotRequired, Optional
 
 class FlatFilters(TypedDict, total=False):
     rooms: NotRequired[int]          # how many flats / rooms are requested
@@ -33,12 +33,13 @@ class FlatFilters(TypedDict, total=False):
     price_max: NotRequired[int]
 
 class CustomerCtx(TypedDict):
-    last_question: str
-    complex: str | None
-    flat_filters: FlatFilters
-    call_requested: bool
-    time_slot_requested: str | None   # free-form, keep it text – parsing later
-    time_slot_agreed: str | None      # filled only after contact_agent responds
+    last_question: Annotated[NotRequired[str], "Last user question from chat"]
+    complex: Annotated[NotRequired[str], "Building complex of client interest"]
+    #flat_filters: Annotated[FlatFilters, "Parameters of flats of client's interest"]
+    flat_filters: Annotated[NotRequired[str], "Parameters of flats of client's interest"]
+    call_requested: Annotated[NotRequired[bool], "True if client requested call with manager."]
+    time_slot_requested: Annotated[NotRequired[str], "Call timeslot, REQUESTED by user"]   # free-form, keep it text – parsing later
+    time_slot_agreed: Annotated[NotRequired[str], "Call timeslot, AGREED with user"]      # filled only after contact_agent responds
 
 
 class State(TypedDict):

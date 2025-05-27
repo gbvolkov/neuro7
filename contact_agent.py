@@ -1,9 +1,11 @@
 from langgraph.prebuilt import create_react_agent
 from tools import agree_call
+from langchain_openai import ChatOpenAI
 
+agent_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=1)
 
 contact_agent = create_react_agent(
-    model="openai:gpt-4.1-mini",
+    model=agent_llm, #"openai:gpt-4.1-mini",
     tools=[agree_call],
     prompt=(
         "You are an agent which returns time slots available for commercial manager to call to client.\n\n"

@@ -18,6 +18,9 @@ from assistant import Assistant, assistant_factory
 from utils import create_tool_node_with_fallback, show_graph, _print_event, _print_response
 from user_info import user_info
 
+import config
+
+
 from kb_agent import kb_agent
 from contact_agent import contact_agent
 from pricing_agent import create_flat_info_retriever, get_retrieval_agent
@@ -30,8 +33,18 @@ from langgraph_supervisor import create_supervisor
 from langgraph_supervisor.handoff import create_handoff_tool
 from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
+from langchain_gigachat import GigaChat
+from langchain_mistralai import ChatMistralAI
 
-main_llm = ChatOpenAI(model="gpt-4.1-mini", temperature=1)
+#agent_llm = ChatOpenAI(model="gpt-4.1-mini", temperature=1)
+agent_llm = ChatMistralAI(model="mistral-large-latest", temperature=1, frequency_penalty=0.3)
+
+#agent_llm = GigaChat(
+#            credentials=config.GIGA_CHAT_AUTH, 
+#            model="GigaChat-Pro",
+#            verify_ssl_certs=False,
+#            temperature=1,
+#            scope = config.GIGA_CHAT_SCOPE)
 
 def reset_memory_condition(state: State) -> str:
     if state["messages"][-1].content[0].get("type") == "reset":
@@ -59,37 +72,52 @@ def initialize_agent(model: ModelType = ModelType.GPT):
     db_7ya = get_retrieval_agent("7ya")
 
 
-    ho_vesna = create_handoff_tool_no_history("vesna_flat_info_retriever")
-    ho_andersen = create_handoff_tool_no_history("andersen_flat_info_retriever")
-    ho_7ya = create_handoff_tool_no_history("7ya_flat_info_retriever")
+    ho_vesna = create_handoff_tool_no_history(
+        agent_name = "vesna_flat_info_retriever", 
+        agent_purpose="provide flats' details for building complex 'vesna' ('Весна').")
+    ho_andersen = create_handoff_tool_no_history(
+        agent_name = "andersen_flat_info_retriever", 
+        agent_purpose="provide flats' details for building complex 'andersen' ('Андерсен').")
+    ho_7ya = create_handoff_tool_no_history(
+        agent_name = "7ya_flat_info_retriever", 
+        agent_purpose="provide flats' details for building complex '7ya' ('7Я', 'Семья').")
 
     ho_tools = [
-        create_handoff_tool_no_history(agent_name = "kb_agent"),
+        create_handoff_tool_no_history(
+            agent_name = "kb_agent", 
+            agent_purpose=
+                "retrieve from database and provide information about:"
+                " (1) building complexes available for sales;"
+                " (2) developers;"
+                " (3) facilities available for the complex;" 
+                " (4) financial conditions like loan availability, discounts and so on"),
         create_handoff_tool(agent_name = "contact_agent"),
-        #ho_vesna,
-        #ho_andersen,
-        #ho_7ya,
-        get_flats_info_for_complex
+        ho_vesna,
+        ho_andersen,
+        ho_7ya,
+        #get_flats_info_for_complex
     ]
 
     with open("prompts/working_prompt_super.txt", encoding="utf-8") as f:
         prompt_txt = f.read()
     supervisor_agent = create_supervisor(
-        model=init_chat_model("openai:gpt-4.1"),
-        #agents=[kb_agent, contact_agent, db_vesna, db_andersen, db_7ya],
-        agents=[kb_agent, contact_agent],
+        model=agent_llm, #init_chat_model("openai:gpt-4.1"),
+        agents=[kb_agent, contact_agent, db_vesna, db_andersen, db_7ya],
+        #agents=[kb_agent, contact_agent],
         prompt=prompt_txt,
         tools=ho_tools,
+        add_handoff_messages=False,
         add_handoff_back_messages=False,
         output_mode="last_message",
-        parallel_tool_calls=True
-    ).compile(name="supervisor")#, debug = True)
+        parallel_tool_calls=False,
+        supervisor_name="neuro7"
+    ).compile(name="neuro7", debug = True)
 
     memory = MemorySaver()
     return (
         StateGraph(State)
         .add_node("fetch_user_info", user_info)
-        .add_node("intent_extract", update_customer_ctx)
+        #.add_node("intent_extract", update_customer_ctx)
         .add_node("reset_memory", reset_memory)
         .add_node("assistant", supervisor_agent)
         .add_edge(START, "fetch_user_info")
@@ -97,7 +125,7 @@ def initialize_agent(model: ModelType = ModelType.GPT):
         #.add_conditional_edges("intent_extract", reset_memory_condition)
         .add_conditional_edges("fetch_user_info", reset_memory_condition)
         .add_edge("reset_memory", END)
-    ).compile(checkpointer=memory)
+    ).compile(checkpointer=memory, debug=True)
 
 
 
@@ -109,8 +137,8 @@ if __name__ == "__main__":
 
     # Let's create an example conversation a user might have with the assistant
     tutorial_questions = [
-        "Какие есть двушки в 7Я?",
         "В каких ЖК вы предлагаете квартиры?",
+        "Какие есть двушки в 7Я?",
         #"А кто строил?",
         #"А какие объекты уже сдали?",
         #"А Александрит ваш?",

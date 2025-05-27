@@ -13,6 +13,22 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import tools_condition, create_react_agent
+from langchain_openai import ChatOpenAI
+from langchain_gigachat import GigaChat
+
+#agent_llm = ChatOpenAI(model="gpt-4.1-nano", temperature=1)
+agent_llm = GigaChat(
+            credentials=config.GIGA_CHAT_AUTH, 
+            model="GigaChat-Pro",
+            verify_ssl_certs=False,
+            temperature=0,
+            scope = config.GIGA_CHAT_SCOPE)
+
+llm_query_gen = ChatOpenAI(model="gpt-4.1", temperature=0)
+#llm_query_gen = ChatOpenAI(model="o4-mini")
+#init_chat_model("gpt-4.1", model_provider="openai", temperature=0)
+#llm = init_chat_model("gpt-4.1-nano", model_provider="openai", temperature=0)
+
 
 
 db_7ya = SQLDatabase.from_uri("sqlite:///data/pricing/7ya.db")
@@ -29,11 +45,6 @@ class State(TypedDict):
     result: str
     answer: str
     messages: List[Dict[str, str]]
-
-llm_query_gen = ChatOpenAI(model="gpt-4.1", temperature=0)
-#llm_query_gen = ChatOpenAI(model="o4-mini")
-#init_chat_model("gpt-4.1", model_provider="openai", temperature=0)
-llm = init_chat_model("gpt-4.1-nano", model_provider="openai", temperature=0)
 
 system_message = """
 Given an input question, create a syntactically correct {dialect} query to
@@ -85,8 +96,6 @@ user_prompt = "Question: {input}"
 query_prompt_template = ChatPromptTemplate(
     [("system", system_message), ("user", user_prompt)]
 )
-
-
 
 class QueryOutput(TypedDict):
     """Generated SQL query."""
@@ -155,7 +164,7 @@ def create_flat_info_retriever(complex_id: str):
             f'SQL Query: {state["query"]}\n'
             f'SQL Result: {state["result"]}'
         )
-        result = llm.invoke(prompt)
+        result = agent_llm.invoke(prompt)
         answer = result.content
         return {"result": answer, "messages": [{"role": "assistant", "content": answer}]}
 
@@ -197,10 +206,11 @@ def get_retrieval_agent(complex_id: str):
         )
 
     return create_react_agent(
-        model=llm,
+        model=agent_llm,
         tools=[retrieval_tool],# search_kb],
         prompt=prompt,
         name=f"{complex_id}_flat_info_retriever",
+        debug=True
     )
 
 if __name__ == "__main__":
