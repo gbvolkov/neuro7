@@ -5,7 +5,7 @@ from typing_extensions import TypedDict, Literal, Annotated, Optional
 from langchain_core.runnables import Runnable
 from langchain_core.prompts import ChatPromptTemplate
 
-from state import State, CustomerCtx         # keep your existing TypedDicts
+from agents.state.state import State, CustomerCtx         # keep your existing TypedDicts
 
 
 # --- schema --------------------------------------------------------------

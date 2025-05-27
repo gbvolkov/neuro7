@@ -20,16 +20,16 @@ from langchain.agents import initialize_agent, AgentType
 
 #from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
-from retriever import search_kb
-from tools import (get_list_of_complexes,
+from v01.retriever import search_kb
+from agents.tools.tools import (get_list_of_complexes,
                    get_developer_info,
                    get_complex_info,
                    agree_call
                    )
-from pricing_tools import get_flats_info_for_complex
+from v01.pricing_tools import get_flats_info_for_complex
 
-from utils import ModelType
-from state import State
+from utils.utils import ModelType
+from agents.state.state import State
 
 from hf_tools.chat_local import ChatLocalTools
 

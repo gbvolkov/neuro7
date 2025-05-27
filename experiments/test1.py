@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage
 
 from langchain_core.tools import tool
 from datetime import date, datetime
-from retriever import search_kb
+from v01.retriever import search_kb
 
 import os
 import config

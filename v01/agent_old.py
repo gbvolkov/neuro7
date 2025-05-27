@@ -13,10 +13,10 @@ from langgraph.prebuilt import tools_condition
 
 from langchain_core.messages.modifier import RemoveMessage
 
-from state import State
+from agents.state.state import State
 from assistant import Assistant, assistant_factory
 from utils import create_tool_node_with_fallback, show_graph, _print_event, _print_response
-from user_info import user_info
+from agents.user_info import user_info
 
 def reset_memory_condition(state: State) -> str:
     if state["messages"][-1].content[0].get("type") == "reset":

@@ -18,7 +18,7 @@ from vrecog.vrecog import recognise_text
 
 from thread_settings import ThreadSettings
 
-from utils import _send_response, summarise_image, image_to_uri, ModelType
+from utils.utils import _send_response, summarise_image, image_to_uri, ModelType
 
 #from palimpsest.logger_factory import setup_logging
 

@@ -9,7 +9,7 @@ from langgraph.types import Send
 from langgraph.graph import MessagesState
 
 from typing import Annotated
-from state import CustomerCtx
+from agents.state.state import CustomerCtx
 
 def newest_user_text(messages: list) -> str | None:
     for m in reversed(messages):

@@ -37,10 +37,8 @@ def _coerce_content(raw: Any) -> str:
 def _msgs_to_hf(msgs: Sequence[BaseMessage]) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for m in msgs:
-        if isinstance(m, SystemMessage):
+        if isinstance(m, (SystemMessage, HumanMessage)):
             #out.append({"role": "system", "content": _coerce_content(m.content)})
-            out.append({"role": "user", "content": _coerce_content(m.content)})
-        elif isinstance(m, HumanMessage):
             out.append({"role": "user", "content": _coerce_content(m.content)})
         elif isinstance(m, ToolMessage):
             out.append({"role": "tool", "content": _coerce_content(m.content), "name": m.name})
@@ -49,7 +47,7 @@ def _msgs_to_hf(msgs: Sequence[BaseMessage]) -> List[Dict[str, Any]]:
                 "role": "assistant",
                 "content": _coerce_content(m.content or ""),
             }
-            entry.update(m.additional_kwargs)          # keep function_call / tool_calls
+            entry |= m.additional_kwargs
             out.append(entry)
         else:
             raise ValueError(f"Unknown message type: {type(m)}")
@@ -140,6 +138,7 @@ class ChatLocalTools(BaseChatModel):
 
     # ───────── the main generate loop ───────── #
     def _generate(self, messages: List[BaseMessage], stop=None, **kw) -> ChatResult:
+        # sourcery skip: low-code-quality
         #messages = [HumanMessage(content=msg.content) if isinstance(msg, SystemMessage) else msg for msg in messages]
         history = list(messages)
         remaining = self._max_calls
@@ -177,13 +176,11 @@ class ChatLocalTools(BaseChatModel):
             m = _HERMES_RE.search(text)
             if m:
                 tool_data = json.loads(m.group(1))
-            else:
-                m = _YANDEX_RE.search(text)
-                if m:
-                    tool_data = {
-                        "name": m.group(1).strip(),
-                        "arguments": json.loads(m.group(2).replace("'", '"')),
-                    }
+            elif m := _YANDEX_RE.search(text):
+                tool_data = {
+                    "name": m.group(1).strip(),
+                    "arguments": json.loads(m.group(2).replace("'", '"')),
+                }
 
             # ❹ Execute if present
             if tool_data and remaining > 0:

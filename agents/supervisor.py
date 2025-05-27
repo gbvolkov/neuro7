@@ -5,7 +5,7 @@ import os
 os.environ["LANGCHAIN_ENDPOINT"]="https://api.smith.langchain.com"
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 
-from utils import ModelType
+from utils.utils import ModelType
 
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph, START
@@ -13,28 +13,19 @@ from langgraph.prebuilt import tools_condition
 
 from langchain_core.messages.modifier import RemoveMessage
 
-from state import State
-from assistant import Assistant, assistant_factory
-from utils import create_tool_node_with_fallback, show_graph, _print_event, _print_response
-from user_info import user_info
+from agents.state.state import State
+from agents.user_info import user_info
 
 import config
 
-from kb_agent import kb_agent
-from contact_agent import contact_agent
-from pricing_agent import create_flat_info_retriever, get_retrieval_agent
-from pricing_tools import get_flats_info_for_complex
-from supervisor_tools import create_pricing_handoff_tool, create_handoff_tool_no_history
-from intent_extractor import update_customer_ctx
+from agents.kb_agent import kb_agent
+from agents.contact_agent import contact_agent
+from agents.pricing_agent import get_retrieval_agent
+from agents.tools.supervisor_tools import create_handoff_tool_no_history
 
-from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
 from langgraph_supervisor.handoff import create_handoff_tool
-from langchain.chat_models import init_chat_model
 from langchain_openai import ChatOpenAI
-from langchain_gigachat import GigaChat
-from langchain_mistralai import ChatMistralAI
-
 
 
 agent_llm = ChatOpenAI(model="gpt-4.1", temperature=1)

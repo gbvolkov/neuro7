@@ -10,13 +10,12 @@ from langchain_core.messages import HumanMessage
 import time, uuid, json, os, base64
 from collections import defaultdict
 
-from agent import initialize_agent
+from agents.supervisor import initialize_agent
 
-from utils import _print_response, summarise_image, image_to_uri
+from utils.utils import _print_response, summarise_image, image_to_uri
 
 def _get_response(event: dict, _printed: set, max_length=1500):
-    message = event.get("messages")
-    if message:
+    if message := event.get("messages"):
         if isinstance(message, list):
             message = message[-1]
         if message.id not in _printed:

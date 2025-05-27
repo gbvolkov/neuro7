@@ -226,7 +226,7 @@ if __name__ == "__main__":
     print(result)
 
 
-    from supervisor_tools import create_pricing_handoff_tool
+    from agents.tools.supervisor_tools import create_pricing_handoff_tool
     from langgraph_supervisor import create_supervisor
 
     ho_vesna = create_pricing_handoff_tool("vesna_flat_info_retriever")

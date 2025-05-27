@@ -1,3 +1,4 @@
+import contextlib
 import re
 import json
 from typing import Any, List, Optional, Sequence, Union, Dict
@@ -89,21 +90,16 @@ class ChatHuggingFaceWithTools(ChatHuggingFace):
                 except Exception:
                     continue
 
-            # 2) Yandex-style [TOOL_CALL_START]name\n{args}
             if not calls:
-                y = re.search(
+                if y := re.search(
                     r"\[TOOL_CALL_START\]([^\n]+)\n(\{.*?\})",
                     text,
                     flags=re.DOTALL,
-                )
-                if y:
-                    name = y.group(1).strip()
-                    try:
-                        args = json.loads(y.group(2))
+                ):
+                    name = y[1].strip()
+                    with contextlib.suppress(Exception):
+                        args = json.loads(y[2])
                         calls.append({"name": name, "args": args, "id": "0"})
-                    except Exception:
-                        pass
-
             # 3) Bare-args fallback: single-tool scenarios
             if not calls and hasattr(self, "_pipeline_tools") and len(self._pipeline_tools) == 1:
                 for m in re.findall(r"\{.*?\}", text, flags=re.DOTALL):
