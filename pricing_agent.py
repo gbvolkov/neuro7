@@ -75,13 +75,13 @@ Always include prices, number of rooms and sizes into response.
 Include into query only flats where price value is defined.
 Never query for all the columns from a specific table, only ask for a the
 few relevant columns given the question.
-Do not use building_name field for query information.
 
 Pay attention to use only the column names that you can see in the schema
 description. Be careful to not query for columns that do not exist. Also,
 pay attention to which column is in which table.
 
-Never use the following fields for the query: category, property_type, building_state.
+IMPORTANT: use only following fields for WHERE clause: price_value, rooms, area_total, renovation. Do not use other fields!!!
+Use for query only fields that matches with user request. Do not extend query for other fields.
 Field renovation can be one of: 'черновая отделка' or 'под ключ'.
 Include results as folliwing: {return_condition}
 
@@ -159,6 +159,7 @@ def create_flat_info_retriever(complex_id: str):
         prompt = (
             "Given the following user question, corresponding SQL query, "
             "and SQL result, answer the user question.\n"
+            "If result is empty inform user that there are no records meeting given criteria.\n"
             "Do not include into response any technical fields (for example:ID).\n\n"
             f'Question: {state["question"]}\n'
             f'SQL Query: {state["query"]}\n'

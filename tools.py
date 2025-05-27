@@ -10,8 +10,10 @@ complexes_idx = {rec["id"]: rec for rec in complexes}
 @tool
 def get_list_of_complexes() -> list[dict]:
     """Возвращает список жилых комплексов (ЖК), доступных к продаже.
-Returns list of residential complexes, available for sale."""
-    return sub_dict(complexes, ["id", "name", "alternative_name", "district", "ready_date", "number_of_houses", "level"])
+Список содержит: id комплекса, название, альтернативное название, район, год постройки, количество домов, уровень комфорта
+Returns list of residential complexes, available for sale.
+List contains: complex id, name, alternative name, district, year of construction, number of houses, comfort level"""
+    return sub_dict(complexes, ["id", "name", "alternative_name", "district", "ready_date", "number_of_houses", "comfort_level"])
 
 @tool
 def get_developer_info() -> dict:
@@ -34,12 +36,12 @@ IMPORTANT: This tool does not contain information on building complexes!!!"""
 
 @tool
 def get_complex_info(complex_id: str, list_of_fields: list[str]) -> dict:
-    """Возвращает информацию по определённому жилому комплексу (ЖК).
-Returns information of the residential complex by id.
+    """Возвращает расширенную информацию по определённому жилому комплексу (ЖК).
+Returns extended information of the residential complex by id.
 
 Args:
     complex_id: id of the complex. Can be one of the following values: vesna, 7ya, andersen. 
-    list_of_fields: list of fields to return. Available fields: general_info, features, financial_conditions, managers_info"""
+    list_of_fields: list of fields to return. Available fields: name, alternative_name, district, ready_date, number_of_houses, comfort_level, general_info, features, financial_conditions, managers_info"""
     try:
         found_complex = complexes_idx[complex_id]
     except Exception:
@@ -48,7 +50,7 @@ Args:
 
 
 @tool
-def agree_call(requested_time_slot: str) -> dict:
+def agree_call(requested_time_slot: str = None) -> dict:
     """Возвращает предложение по времени созвона с менеджером.
 
 Args:
