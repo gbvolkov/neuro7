@@ -37,11 +37,11 @@ def run_bot():
         assistant = chats[chat_id].assistant
         #resetting memory
         assistant.invoke(
-            {"messages": [HumanMessage(content=[{"type": "reset", "text": "RESET"}])]}, chats[chat_id].get_config(), stream_mode="values"
+                {"messages": [HumanMessage(content=[{"type": "reset", "text": "RESET"}])]}, chats[chat_id].get_config(), stream_mode="values"
         )
 
         #Generating welcome message
-        query = "Привет! Представься пожалуйста и расскажи о себе."
+        query = "Здравствуйте! Представьтесь пожалуйста и расскажите о себе."
         messages = HumanMessage(
             content=[{"type": "text", "text": query}]
         )

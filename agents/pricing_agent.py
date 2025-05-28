@@ -53,28 +53,10 @@ specific number of examples they wish to obtain, always limit your query to
 at most {top_k} results. You can order the results by a relevant column to
 return the most interesting examples in the database.
 
-"**Important:** Ensure each part of the UNION uses a subquery or appropriate SQLite syntax, since each SELECT uses ORDER BY with LIMIT. Use aliases for any subqueries as needed. Provide the final SQL query only, no explanations.\b"
-                "Example properly formatted query with union:\n"
-                "  SELECT internal_id, price_value, rooms\n"
-                "    FROM (\n"
-                "    SELECT internal_id, price_value, rooms\n"
-                "        FROM Properties\n"
-                "        ORDER BY price_value ASC\n"
-                "        LIMIT 1\n"
-                "    ) AS cheapest\n"
-                "    UNION ALL\n"
-                "    SELECT internal_id, price_value, rooms\n"
-                "    FROM (\n"
-                "        SELECT internal_id, price_value, rooms\n"
-                "        FROM Properties\n"
-                "        ORDER BY price_value DESC\n"
-                "        LIMIT 1\n"
-                "    ) AS most_expensive;"
-
 Always include prices, number of rooms and sizes into response.
 Include into query only flats where price value is defined.
 Never query for all the columns from a specific table, only ask for a the
-few relevant columns given the question.
+few relevant columns given the question. Always include: price_value, rooms, area_total, renovation.
 
 Pay attention to use only the column names that you can see in the schema
 description. Be careful to not query for columns that do not exist. Also,
@@ -126,8 +108,25 @@ def create_flat_info_retriever(complex_id: str):
 
         else:
             top_k = 2
-            return_condition = ("\nInclude 1 cheapest flat and 1 most expensive flat."
+            return_condition = ("\nInclude (1 cheapest flat and 1 most expensive flat with renovation == 'черновая отделка') and (1 cheapest flat and 1 most expensive flat with renovation == 'под ключ') ."
                 "Combine the results using UNION ALL so that both rows are returned together.\n"
+                "**Important:** Ensure each part of the UNION uses a subquery or appropriate SQLite syntax, since each SELECT uses ORDER BY with LIMIT. Use aliases for any subqueries as needed. Provide the final SQL query only, no explanations.\n"
+                "Example properly formatted query with union:\n"
+                "  SELECT internal_id, price_value, rooms\n"
+                "    FROM (\n"
+                "    SELECT internal_id, price_value, rooms\n"
+                "        FROM Properties\n"
+                "        ORDER BY price_value ASC\n"
+                "        LIMIT 1\n"
+                "    ) AS cheapest\n"
+                "    UNION ALL\n"
+                "    SELECT internal_id, price_value, rooms\n"
+                "    FROM (\n"
+                "        SELECT internal_id, price_value, rooms\n"
+                "        FROM Properties\n"
+                "        ORDER BY price_value DESC\n"
+                "        LIMIT 1\n"
+                "    ) AS most_expensive;"
                 )
             #return_condition = ("\nWrite a SQLite query to retrieve two records:\n"
             #    "1. The cheapest flat.\n"
@@ -160,6 +159,9 @@ def create_flat_info_retriever(complex_id: str):
             "Given the following user question, corresponding SQL query, "
             "and SQL result, answer the user question.\n"
             "If result is empty inform user that there are no records meeting given criteria.\n"
+            "Respond with list of flats satisfying criteria\n"
+            "Include into response all fields, except technical\n"
+            "Include into result price_value, rooms, area_total, renovation\n"
             "Do not include into response any technical fields (for example:ID).\n\n"
             f'Question: {state["question"]}\n'
             f'SQL Query: {state["query"]}\n'
@@ -204,7 +206,9 @@ def get_retrieval_agent(complex_id: str):
             "INSTRUCTIONS:\n"
             f"- Assist ONLY with tasks related to retrieval information about building complex {complex_id}\n"
             "- After you're done with your tasks, respond to the supervisor directly\n"
-            "- Respond with list of flats sutisfying criteria\n"
+            "- Respond with list of flats returned by your tools\n"
+            "- Keep maximum information from all returned records\n"
+            "- Include into result price_value, rooms, area_total, renovation\n"
             "- Respond ONLY with the results of your work, do NOT include ANY other text."
         )
 
