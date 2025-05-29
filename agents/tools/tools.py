@@ -41,7 +41,7 @@ Returns extended information of the residential complex by id.
 
 Args:
     complex_id: id of the complex. Can be one of the following values: vesna, 7ya, andersen. 
-    list_of_fields: list of fields to return. Available fields: name, alternative_name, district, ready_date, number_of_houses, comfort_level, general_info, features, financial_conditions, managers_info"""
+    list_of_fields: list of fields to return. Available fields: name, alternative_name, district, ready_date, number_of_houses, comfort_level, general_info, features, financial_conditions, managers_info, presentation"""
     try:
         found_complex = complexes_idx[complex_id]
     except Exception:

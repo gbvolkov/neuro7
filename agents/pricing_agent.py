@@ -42,8 +42,9 @@ db_andersen.name = "andersen"
 class State(TypedDict):
     question: str
     query: str
-    result: str
-    answer: str
+    result: str | None 
+    error: str | None 
+    answer: str | None
     messages: List[Dict[str, str]]
 
 system_message = """
@@ -53,17 +54,16 @@ specific number of examples they wish to obtain, always limit your query to
 at most {top_k} results. You can order the results by a relevant column to
 return the most interesting examples in the database.
 
-Always include prices, number of rooms and sizes into response.
+Always include prices, number of rooms and sizes and other relevant fields into response.
 Include into query only flats where price value is defined.
-Always query for all the columns from a specific table, ask the 
-relevant columns given the question. Always include: price_value, rooms, area_total, renovation.
+Always include into response maimum columns relevant to the question givem. Always specify, even if not explicitly stated: price_value, rooms, area_total, renovations.
 
 Pay attention to use only the column names that you can see in the schema
 description. Be careful to not query for columns that do not exist. Also,
 pay attention to which column is in which table.
 
-IMPORTANT: use only following fields for WHERE clause: price_value, rooms, area_total, renovation, floor. Do not use other fields!!!
-Use for query only fields that matches with user request. Do not extend query for other fields.
+IMPORTANT: DO NOT USE for WHERE clause fields other than: price_value, rooms, area_total, renovation, floor.
+Use for query only fields that matches with user request limited to: price_value, rooms, area_total, renovation, floor. Do not extend query for other fields.
 Field renovation can be one of: 'черновая отделка' or 'под ключ'.
 Include results as folliwing: {return_condition}
 
@@ -147,11 +147,47 @@ def create_flat_info_retriever(complex_id: str):
         result = structured_llm.invoke(prompt)
         return {"query": result["query"]}
 
+    def fix_query(state: State):
+        """
+        The previous SQL failed.  Regenerate a new query
+        taking the DB error into account.
+        """
+        prompt = (
+            f"The following SQL produced an error:\n\n{state['query']}\n\n"
+            f"Database error:\n{state['error']}\n\n"
+            "Rewrite *only* the SQL so it will execute successfully, following "
+            "the same column-name and WHERE-clause rules you already know."
+        )
 
+        structured_llm = llm_query_gen.with_structured_output(QueryOutput)
+        new_query = structured_llm.invoke(prompt)["query"]
+        return {
+            "query": new_query,
+            "error": None,            # reset – we haven’t executed it yet
+            "result": None
+        }
+    
+    def failed(state: State) -> bool:
+        """Return True when the last execution step raised an error."""
+        return state.get("error") is not None
+        
     def execute_query(state: State):
         """Execute SQL query."""
         execute_query_tool = QuerySQLDatabaseTool(db=db)
-        return {"result": execute_query_tool.invoke(state["query"])}
+
+        try:
+            rows = execute_query_tool.invoke(state["query"])
+            return {
+                "result": rows,
+                "error": None,
+                "attempts": state.get("attempts", 0)      # just pass through
+            }
+        except Exception as exc:
+            return {
+                "result": None,
+                "error": str(exc),                        # make the message available
+                "attempts": state.get("attempts", 0) + 1  # count this try
+            }
 
     def generate_answer(state: State):
         """Answer question using retrieved information as context."""
@@ -171,11 +207,54 @@ def create_flat_info_retriever(complex_id: str):
         answer = result.content
         return {"result": answer, "messages": [{"role": "assistant", "content": answer}]}
 
-    flat_info_retriever = (
+    #flat_info_retriever = (
+    #    StateGraph(State)
+    #    .add_sequence([write_query, execute_query, generate_answer])
+    #    .add_edge(START, "write_query")
+    #).compile(
+    #    name=f"{complex_id}_flat_info_retriever",
+    #    debug=config.DEBUG_WORKFLOW,
+    #)
+
+    graph = (
         StateGraph(State)
-        .add_sequence([write_query, execute_query, generate_answer])
-        .add_edge(START, "write_query")
-    ).compile(
+        .add_node("write_query", write_query)
+        .add_node("execute_query", execute_query)
+        .add_node("fix_query", fix_query)
+        .add_node("generate_answer", generate_answer)
+    )
+
+    graph.set_entry_point("write_query")
+
+    # write_query  ➔ execute_query
+    graph.add_edge("write_query", "execute_query")
+
+    # execute_query  ⟶  fix_query  OR  generate_answer
+    graph.add_conditional_edges(
+        "execute_query",
+        failed,
+        {
+            True: "fix_query",
+            False: "generate_answer",
+        },
+    )
+
+    # After we fix the query, try executing again.
+    graph.add_edge("fix_query", "execute_query")
+
+    # Optional safety valve: stop after 3 attempts
+    def too_many_attempts(state: State) -> bool:
+        return state.get("attempts", 0) >= 3
+
+    graph.add_conditional_edges(
+        "fix_query",
+        too_many_attempts,
+        {
+            True: END,          # give up, surface the error
+            False: "execute_query"
+        },
+    )
+    flat_info_retriever = graph.compile(
         name=f"{complex_id}_flat_info_retriever",
         debug=config.DEBUG_WORKFLOW,
     )
