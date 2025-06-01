@@ -29,6 +29,7 @@ kb_agent = create_react_agent(
         "INSTRUCTIONS:\n"
         f"- Assist ONLY with tasks related to retrieval information about building complexes {complexes_names}\n"
         "- Do not answer questions related to pricing and details of flats available within building complexes\n"
+        "- IMPORTANT: Always provide only information returned by tools. NEWER make up information!\n"
         "- After you're done with your tasks, respond to the supervisor directly\n"
         "- Respond ONLY with the results of your work, do NOT include ANY other text."
     ),

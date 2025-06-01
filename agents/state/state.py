@@ -40,7 +40,8 @@ class CustomerCtx(TypedDict):
     time_slot_agreed: Annotated[NotRequired[str], "Call timeslot, AGREED with user"]      # filled only after contact_agent responds
 
 
+
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages_no_img]
-    #customer_ctx: CustomerCtx
+    agent_introduced: Optional[bool]
     user_info: UserInfo

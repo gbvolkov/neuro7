@@ -10,6 +10,7 @@ from utils.utils import ModelType
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import tools_condition
+from langchain_core.messages import AIMessage
 
 from langchain_core.messages.modifier import RemoveMessage
 
@@ -23,10 +24,15 @@ from agents.contact_agent import contact_agent
 from agents.pricing_agent import get_retrieval_agent
 from agents.tools.supervisor_tools import create_handoff_tool_no_history
 
+from agents.tools.tools import complexes
+from utils.utils import sub_dict
+
 from langgraph_supervisor import create_supervisor
 from langgraph_supervisor.handoff import create_handoff_tool
 from langchain_openai import ChatOpenAI
 
+
+COMPLEX_LIST = sub_dict(complexes, ["id", "name", "alternative_name", "district", "ready_date", "number_of_houses", "comfort_level"])
 
 agent_llm = ChatOpenAI(model="gpt-4.1", temperature=1)
 #agent_llm = ChatMistralAI(model="mistral-large-latest", temperature=1, frequency_penalty=0.3)
@@ -52,6 +58,42 @@ def reset_memory(state: State) -> State:
     # Returning RemoveMessage instances instructs the reducer to delete them
     return {
         "messages": [RemoveMessage(id=mid) for mid in all_msg_ids]
+    }
+
+def check_introduction_needed(state: State) -> str:
+    """
+    Проверяет, нужно ли представляться агенту.
+    Представление нужно только при самом первом сообщении от пользователя.
+    """
+    introduced = state.get("agent_introduced", False)
+    messages = state.get("messages", [])
+    
+    # Считаем количество сообщений от пользователя (не системных)
+    user_messages = [msg for msg in messages if hasattr(msg, 'type') and msg.type == 'human']
+    
+    # Представляемся только при первом сообщении пользователя и если еще не представлялись
+    if not introduced and len(user_messages) == 1:
+        return "introduce_and_respond"
+    else:
+        return "supervisor"
+    
+def introduce_and_respond(state: State) -> State:
+    """
+    Представляется и отвечает на первое сообщение пользователя.
+    Этот узел вызывается только один раз - при самом первом сообщении.
+    """
+    # Первичное представление + ответ на вопрос пользователя
+    intro_message = AIMessage(
+        content="""Здравствуйте! Меня зовут Екатерина, компания ГК «НОВЫЙ ДОМ». Благодарим за интерес к нашим объектам.
+
+Продолжая переписку, вы даёте согласие на обработку персональных данных."""
+    )
+    
+    # Устанавливаем флаг, что представление состоялось
+    # Возвращаем состояние с представлением, а supervisor обработает основной вопрос
+    return {
+        "messages": [intro_message],
+        "agent_introduced": True
     }
 
 
@@ -92,6 +134,8 @@ def initialize_agent(model: ModelType = ModelType.GPT):
 
     with open("prompts/working_prompt_super.txt", encoding="utf-8") as f:
         prompt_txt = f.read()
+    prompt_txt = f"{prompt_txt}\nСписок жилых комплексов: {COMPLEX_LIST}\n\n"
+
     supervisor_agent = create_supervisor(
         model=agent_llm, #init_chat_model("openai:gpt-4.1"),
         agents=[kb_agent, contact_agent, db_vesna, db_andersen, db_7ya],
@@ -111,12 +155,15 @@ def initialize_agent(model: ModelType = ModelType.GPT):
         .add_node("fetch_user_info", user_info)
         #.add_node("intent_extract", update_customer_ctx)
         .add_node("reset_memory", reset_memory)
-        .add_node("assistant", supervisor_agent)
+        .add_node("introduce_and_respond", introduce_and_respond)
+        .add_node("supervisor", supervisor_agent)
         .add_edge(START, "fetch_user_info")
         #.add_edge("fetch_user_info", "intent_extract") 
         #.add_conditional_edges("intent_extract", reset_memory_condition)
         .add_conditional_edges("fetch_user_info", reset_memory_condition)
         .add_edge("reset_memory", END)
+        .add_conditional_edges("fetch_user_info", check_introduction_needed)
+        .add_edge("introduce_and_respond", "supervisor")
     ).compile(checkpointer=memory, debug=config.DEBUG_WORKFLOW)
 
 
