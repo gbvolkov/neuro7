@@ -44,4 +44,6 @@ class CustomerCtx(TypedDict):
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages_no_img]
     agent_introduced: Optional[bool]
+    call_scheduled: Optional[bool]
+    call_time: Optional[str]
     user_info: UserInfo

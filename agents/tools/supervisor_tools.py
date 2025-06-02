@@ -75,3 +75,31 @@ def create_handoff_tool_no_history(agent_name: str, agent_purpose: str | None = 
         )
     _handoff_tool.metadata = {METADATA_KEY_HANDOFF_DESTINATION: agent_name}
     return _handoff_tool
+
+
+def create_handoff_tool_with_summary(agent_name: str, agent_purpose: str | None = None):
+    name = f"transfer_to_{agent_name}"
+    @tool(name,
+          description=f"Handoff to {agent_name} to {agent_purpose or "execute agent specific tasks."} .")
+    def _handoff_tool(
+        state: Annotated[MessagesState, InjectedState],
+        tool_call_id: Annotated[str, InjectedToolCallId],
+        task: Annotated[str, "Task delegated to agent"],
+        summary: Annotated[str, "Summary of a chat with client. Shall include information about client, it's family, reason for purchasing flat, building complex, financial conditions client is interested in, number of rooms, budget (if provided, optional)"],
+    ) -> Command:
+        tool_message = {
+            "role": "tool",
+            "content": f"Successfully transferred to {agent_name}",
+            "name": name,
+            "tool_call_id": tool_call_id,
+        }
+        question = newest_user_text(state.get("messages", []))
+        content = f"User request: {question}\nPerform this task to address user request: {task}\n Chat summary: {summary}"
+        agent_input = {"messages": HumanMessage(content=content)}
+        return Command(
+            goto=[Send(agent_name, agent_input)],
+            update={**state, "messages": state["messages"] + [tool_message]},
+            graph=Command.PARENT
+        )
+    _handoff_tool.metadata = {METADATA_KEY_HANDOFF_DESTINATION: agent_name}
+    return _handoff_tool
