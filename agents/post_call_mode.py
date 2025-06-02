@@ -84,10 +84,7 @@ def cancel_post_call_condition(state: Dict[str, Any]) -> bool:
         return False
 
     last_text = _extract_last_human_text(state)
-    if not last_text:
-        return False
-
-    return user_wants_to_change_call_llm(last_text)
+    return user_wants_to_change_call_llm(last_text) if last_text else False
 
 
 def post_call_mode_handler(state: Dict[str, Any]) -> Dict[str, Any]:
@@ -123,9 +120,7 @@ def post_call_mode_handler(state: Dict[str, Any]) -> Dict[str, Any]:
 
     # 3. Собираем цепочку для response_llm
     llm_messages = [SystemMessage(content=prompt_txt)]
-    for msg in filtered_messages:
-        llm_messages.append(msg)
-
+    llm_messages.extend(iter(filtered_messages))
     # 4. Запрашиваем ответ от response_llm
     response = response_llm(messages=llm_messages)
 
