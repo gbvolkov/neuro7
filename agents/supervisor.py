@@ -1,6 +1,7 @@
 
 import uuid
 import os
+import datetime
 
 os.environ["LANGCHAIN_ENDPOINT"]="https://api.smith.langchain.com"
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -20,7 +21,7 @@ from agents.user_info import user_info
 import config
 
 from agents.kb_agent import kb_agent
-from agents.contact_agent import contact_agent
+from schedule_call_agent import schedule_call_agent
 from agents.pricing_agent import get_retrieval_agent
 from agents.tools.supervisor_tools import create_handoff_tool_no_history
 
@@ -97,7 +98,6 @@ def introduce_and_respond(state: State) -> State:
         "agent_introduced": True
     }
 
-
 def initialize_agent(model: ModelType = ModelType.GPT):
     #db_vesna = create_flat_info_retriever("vesna")
     #db_andersen = create_flat_info_retriever("andersen")
@@ -126,7 +126,12 @@ def initialize_agent(model: ModelType = ModelType.GPT):
                 " (2) developers;"
                 " (3) facilities available for the complex;" 
                 " (4) financial conditions like loan availability, discounts and so on"),
-        create_handoff_tool(agent_name = "contact_agent"),
+        create_handoff_tool_no_history(
+            agent_name = "schedule_call_agent", 
+            agent_purpose=
+                "Schedules date and time for a call with manager\n" 
+                "Instruct agent to schedule call time include into instructions current user datetime\n"
+                "Agent will check availables slots for manager and return assigned time\n"),
         ho_vesna,
         ho_andersen,
         ho_7ya,
@@ -139,7 +144,7 @@ def initialize_agent(model: ModelType = ModelType.GPT):
 
     supervisor_agent = create_supervisor(
         model=agent_llm, #init_chat_model("openai:gpt-4.1"),
-        agents=[kb_agent, contact_agent, db_vesna, db_andersen, db_7ya],
+        agents=[kb_agent, schedule_call_agent, db_vesna, db_andersen, db_7ya],
         #agents=[kb_agent, contact_agent],
         prompt=prompt_txt,
         tools=ho_tools,

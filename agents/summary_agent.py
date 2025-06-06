@@ -20,8 +20,8 @@ def confirm_summary(summary: str) -> Command:
     """
     update_payload = {
         "call_scheduled": True,
-        "call_time": ""#,
-        #"messages": [AIMessage(content="Информация зафискирована. Ожидайте звонка.")]
+        "call_time": "",
+        "messages": [AIMessage(content="__FIXED__365477__")]
     }
     return Command(
         update=update_payload,

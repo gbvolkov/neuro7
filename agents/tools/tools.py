@@ -1,8 +1,12 @@
-from langchain_core.tools import tool
-
-from utils.utils import sub_dict
+from typing import Annotated
 from datetime import datetime
 import json
+
+from langchain_core.tools import tool
+from langgraph.types import Command
+
+from utils.utils import sub_dict
+from agents.state.state import State
 
 complexes = json.loads(open("data/residential_complexes.json", "r", encoding="utf-8").read())
 complexes_idx = {rec["id"]: rec for rec in complexes}
@@ -64,3 +68,12 @@ Args:
     else:
         return {"time_slot": "tomorrow"}
 
+@tool("initiate_schedule", description="Begin the call‐scheduling flow")
+def initiate_schedule_tool(state: State) -> Command:
+    """
+    When called, immediately jump to the 'fetch_slots' node in the parent graph.
+    """
+    return Command(
+        goto=["fetch_slots"],
+        graph=Command.PARENT
+    )

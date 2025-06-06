@@ -1,3 +1,4 @@
+from datetime import datetime
 
 from langchain_core.messages import ToolMessage
 from langgraph.types import Command
@@ -66,7 +67,7 @@ def create_handoff_tool_no_history(agent_name: str, agent_purpose: str | None = 
             "tool_call_id": tool_call_id,
         }
         question = newest_user_text(state.get("messages", []))
-        content = f"User request: {question}\nPerform this task to address user request: {task}"
+        content = f"User request: {question}\nPerform this task to address user request: {task}\nCurrent user datetime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         agent_input = {"messages": HumanMessage(content=content)}
         return Command(
             goto=[Send(agent_name, agent_input)],
