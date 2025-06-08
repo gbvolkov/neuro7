@@ -21,7 +21,7 @@ from agents.user_info import user_info
 import config
 
 from agents.kb_agent import kb_agent
-from schedule_call_agent import schedule_call_agent
+from agents.schedule_call_agent import schedule_call_agent
 from agents.pricing_agent import get_retrieval_agent
 from agents.tools.supervisor_tools import create_handoff_tool_no_history
 
