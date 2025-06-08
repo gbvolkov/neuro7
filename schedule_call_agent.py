@@ -159,18 +159,9 @@ schedule_call_agent = create_react_agent(
 
 # ─────── DEMO ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    sc = scheduler_factory("manager_config.json")
+    from pprint import pprint
+    content = f"Запросить время звонка на завтра в 16:00 для обсуждения ЖК 'Семья'\nCurrent user datetime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    scheduled = schedule_call_agent.invoke({"messages": HumanMessage(content=content)})
+    print(scheduled.get("messages", [])[-1].content)
+    #pprint(scheduled, depth=4)
 
-    msk_now = datetime(2025, 6, 5, 12, 15, tzinfo=ZoneInfo("Europe/Moscow"))
-
-    tests = [
-        "Ну можно завтра часика в два.",
-        "Да чем быстрее, тем лучше",
-        "Ну давай вечерком",
-        "давай в пятницу утром",
-        "следующий понедельник в 9",
-        "послезавтра",
-    ]
-
-    for phrase in tests:
-        print(f"{phrase!r:35} →  {sc(msk_now, phrase)}")

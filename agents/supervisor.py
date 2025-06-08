@@ -21,7 +21,7 @@ from agents.user_info import user_info
 import config
 
 from agents.kb_agent import kb_agent
-from agents.schedule_call_agent import schedule_call_agent
+from schedule_call_agent import schedule_call_agent
 from agents.pricing_agent import get_retrieval_agent
 from agents.tools.supervisor_tools import create_handoff_tool_no_history
 
@@ -149,7 +149,7 @@ def initialize_agent(model: ModelType = ModelType.GPT):
         prompt=prompt_txt,
         tools=ho_tools,
         add_handoff_messages=False,
-        add_handoff_back_messages=False,
+        add_handoff_back_messages=True,
         output_mode="last_message",
         parallel_tool_calls=False,
         supervisor_name="neuro7"
