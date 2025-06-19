@@ -66,14 +66,14 @@ def check_introduction_needed(state: State) -> str:
     Проверяет, нужно ли представляться агенту.
     Представление нужно только при самом первом сообщении от пользователя.
     """
-    introduced = state.get("agent_introduced", False)
+    need_intro = state.get("need_intro", True)
     messages = state.get("messages", [])
     
     # Считаем количество сообщений от пользователя (не системных)
     user_messages = [msg for msg in messages if hasattr(msg, 'type') and msg.type == 'human']
     
     # Представляемся только при первом сообщении пользователя и если еще не представлялись
-    if not introduced and len(user_messages) == 1:
+    if need_intro and len(user_messages) == 1:
         return "introduce_and_respond"
     else:
         return "supervisor"
@@ -95,13 +95,10 @@ def introduce_and_respond(state: State) -> State:
     # Возвращаем состояние с представлением, а supervisor обработает основной вопрос
     return {
         "messages": [intro_message],
-        "agent_introduced": True
+        "need_intro": True
     }
 
 def initialize_agent(model: ModelType = ModelType.GPT):
-    #db_vesna = create_flat_info_retriever("vesna")
-    #db_andersen = create_flat_info_retriever("andersen")
-    #db_7ya = create_flat_info_retriever("7ya")
     db_vesna = get_retrieval_agent("vesna")
     db_andersen = get_retrieval_agent("andersen")
     db_7ya = get_retrieval_agent("7ya")

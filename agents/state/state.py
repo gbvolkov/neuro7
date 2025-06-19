@@ -45,7 +45,8 @@ class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages_no_img]
     user_info: UserInfo
     
-    agent_introduced: Optional[bool]
+    need_intro: Optional[bool]
+    intro: Optional[str]
 
     is_scheduled: bool              
     scheduled_time: NotRequired[str]
