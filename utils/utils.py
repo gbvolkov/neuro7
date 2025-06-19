@@ -92,7 +92,7 @@ def send_text_element(chat_id, element_content, bot, usr_msg = None):
 
 def _send_response(event: dict, _printed: set, thread, bot, usr_msg=None, max_length=0):
     if current_state := event.get("dialog_state"):
-        print("Currently in: ", current_state[-1])
+        print("Currently in: ", current_state)
     if message := event.get("messages"):
         if isinstance(message, list):
             message = message[-1]

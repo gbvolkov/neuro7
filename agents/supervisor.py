@@ -23,10 +23,12 @@ import config
 from agents.kb_agent import kb_agent
 from agents.schedule_call_agent import schedule_call_agent
 from agents.pricing_agent import get_retrieval_agent
+from agents.completion_agent import completion_agent
 from agents.tools.supervisor_tools import create_handoff_tool_no_history
-
 from agents.tools.tools import complexes
+
 from utils.utils import sub_dict
+from agents.answers_checker import check_summary
 
 from langgraph_supervisor import create_supervisor
 from langgraph_supervisor.handoff import create_handoff_tool
@@ -58,14 +60,11 @@ def reset_memory(state: State) -> State:
     all_msg_ids = [m.id for m in state["messages"]]
     # Returning RemoveMessage instances instructs the reducer to delete them
     return {
-        "messages": [RemoveMessage(id=mid) for mid in all_msg_ids]
+        "messages": [RemoveMessage(id=mid) for mid in all_msg_ids],
+        "dialog_state": "started"
     }
 
-def check_introduction_needed(state: State) -> str:
-    """
-    Проверяет, нужно ли представляться агенту.
-    Представление нужно только при самом первом сообщении от пользователя.
-    """
+def route_agent(state: State) -> str:
     need_intro = state.get("need_intro", True)
     messages = state.get("messages", [])
     
@@ -75,6 +74,8 @@ def check_introduction_needed(state: State) -> str:
     # Представляемся только при первом сообщении пользователя и если еще не представлялись
     if need_intro and len(user_messages) == 1:
         return "introduce_and_respond"
+    elif state.get("dialog_state", "supervisor") == "completion":
+        return "completion"
     else:
         return "supervisor"
     
@@ -95,7 +96,19 @@ def introduce_and_respond(state: State) -> State:
     # Возвращаем состояние с представлением, а supervisor обработает основной вопрос
     return {
         "messages": [intro_message],
-        "need_intro": True
+        "need_intro": True,
+        "dialog_state": "get_details"
+    }
+
+def check_supervisor_answer(state: State) -> State:
+    messages = state["messages"]
+    isSummarised = check_summary(messages[-1].content)
+    if isSummarised == "YES":
+        dialog_state = "completion"
+    else:
+        dialog_state = "supervisor"
+    return {
+        "dialog_state": dialog_state
     }
 
 def initialize_agent(model: ModelType = ModelType.GPT):
@@ -160,13 +173,17 @@ def initialize_agent(model: ModelType = ModelType.GPT):
         .add_node("reset_memory", reset_memory)
         .add_node("introduce_and_respond", introduce_and_respond)
         .add_node("supervisor", supervisor_agent)
+        .add_node("completion", completion_agent)
+        .add_node("check_supervisor_answer", check_supervisor_answer)
+
         .add_edge(START, "fetch_user_info")
         #.add_edge("fetch_user_info", "intent_extract") 
         #.add_conditional_edges("intent_extract", reset_memory_condition)
         .add_conditional_edges("fetch_user_info", reset_memory_condition)
         .add_edge("reset_memory", END)
-        .add_conditional_edges("fetch_user_info", check_introduction_needed)
+        .add_conditional_edges("fetch_user_info", route_agent)
         .add_edge("introduce_and_respond", "supervisor")
+        .add_edge("supervisor", "check_supervisor_answer")
     ).compile(checkpointer=memory, debug=config.DEBUG_WORKFLOW)
 
 

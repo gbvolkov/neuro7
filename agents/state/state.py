@@ -13,6 +13,7 @@ def add_messages_no_img(msgs1: Messages, msgs2: Messages) -> Messages:
 
     return add_messages(msgs1, msgs2)
 
+
 class UserInfo(TypedDict):
     user_name: str
     phone_number: str
@@ -44,6 +45,8 @@ class CustomerCtx(TypedDict):
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages_no_img]
     user_info: UserInfo
+    
+    dialog_state: Optional[str]
     
     need_intro: Optional[bool]
     intro: Optional[str]
