@@ -103,10 +103,7 @@ def introduce_and_respond(state: State) -> State:
 def check_supervisor_answer(state: State) -> State:
     messages = state["messages"]
     isSummarised = check_summary(messages[-1].content)
-    if isSummarised == "YES":
-        dialog_state = "completion"
-    else:
-        dialog_state = "supervisor"
+    dialog_state = "completion" if isSummarised == "YES" else "supervisor"
     return {
         "dialog_state": dialog_state
     }
