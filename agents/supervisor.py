@@ -52,7 +52,6 @@ def reset_memory_condition(state: State) -> str:
         return "reset_memory"
     return "assistant"
 
-
 def reset_memory(state: State) -> State:
     """
     Delete every message currently stored in the thread’s state.
