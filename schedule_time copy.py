@@ -30,10 +30,8 @@ def scheduler_factory(config_path: str | Path):
         wd = d.weekday()
 
         # working weekends override Sunday/Saturday closures
-        if d in cfg.working_weekends:
-            if wd == 6:            # Sunday
-                return cfg.weekly.get(0)   # treat like Monday (edit if needed)
-            # Saturday keeps its usual cfg.weekly[5] hours
+        if d in cfg.working_weekends and wd == 6:
+            return cfg.weekly.get(0)
         return cfg.weekly.get(wd)
 
     def parse_desired(desired: str, user_dt: datetime) -> datetime:
@@ -92,10 +90,10 @@ def _load_config(path: str | Path) -> Config:
 
     tz = ZoneInfo(raw["timezone"])
 
-    weekly = {}
-    for k, v in raw["weekly_schedule"].items():
-        weekly[int(k)] = None if v is None else tuple(time.fromisoformat(t) for t in v)
-
+    weekly = {
+        int(k): None if v is None else tuple(time.fromisoformat(t) for t in v)
+        for k, v in raw["weekly_schedule"].items()
+    }
     tod_defaults = {k: time.fromisoformat(v) for k, v in raw["timeofday_defaults"].items()}
 
     holidays = {date.fromisoformat(d) for d in raw["calendar"].get("holidays", [])}

@@ -14,7 +14,7 @@ from collections import defaultdict
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-from vrecog.vrecog import recognise_text
+from vrecog.vrecog import recognise_text    
 
 from thread_settings import ThreadSettings
 

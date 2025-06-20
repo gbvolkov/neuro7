@@ -47,10 +47,6 @@ agent_llm = ChatOpenAI(model="gpt-4.1", temperature=1)
 #            temperature=1,
 #            scope = config.GIGA_CHAT_SCOPE)
 
-def reset_memory_condition(state: State) -> str:
-    if state["messages"][-1].content[0].get("type") == "reset":
-        return "reset_memory"
-    return "assistant"
 
 def reset_memory(state: State) -> State:
     """
@@ -64,6 +60,10 @@ def reset_memory(state: State) -> State:
     }
 
 def route_agent(state: State) -> str:
+    if state["messages"][-1].content[0].get("type") == "reset":
+        return "reset_memory"
+
+
     need_intro = state.get("need_intro", True)
     messages = state.get("messages", [])
     
@@ -175,9 +175,9 @@ def initialize_agent(model: ModelType = ModelType.GPT):
         .add_edge(START, "fetch_user_info")
         #.add_edge("fetch_user_info", "intent_extract") 
         #.add_conditional_edges("intent_extract", reset_memory_condition)
-        .add_conditional_edges("fetch_user_info", reset_memory_condition)
-        .add_edge("reset_memory", END)
         .add_conditional_edges("fetch_user_info", route_agent)
+
+        .add_edge("reset_memory", END)
         .add_edge("introduce_and_respond", "supervisor")
         .add_edge("supervisor", "check_supervisor_answer")
     ).compile(checkpointer=memory, debug=config.DEBUG_WORKFLOW)

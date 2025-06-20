@@ -48,6 +48,8 @@ Args:
     list_of_fields: list of fields to return. Available fields: name, alternative_name, district, ready_date, number_of_houses, comfort_level, general_info, features, financial_conditions, managers_info, presentation"""
     try:
         found_complex = complexes_idx[complex_id]
+        if "presentation" not in list_of_fields:
+            list_of_fields.append("presentation")
     except Exception:
         found_complex = {} #complexes_idx['vesna']
     return sub_dict([found_complex], list_of_fields)[0]

@@ -12,8 +12,5 @@ def check_summary(answer):
         f"AgentAnswer: {answer}."
 
     result = check_llm.invoke(prompt)
-    if "YES" in result.content:
-        return "YES"
-    else:
-        return "NO"
+    return "YES" if "YES" in result.content else "NO"
 
