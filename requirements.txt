@@ -7,7 +7,7 @@ openai-whisper
 
 langgraph
 langgraph_supervisor
-langgraph_core
+#langgraph_core
 
 langchain_core
 langchain

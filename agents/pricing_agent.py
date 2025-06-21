@@ -99,7 +99,9 @@ def create_flat_info_retriever(complex_id: str):
         """Generate SQL query to fetch information."""
         if db.name == "vesna":
             top_k = 3
-            return_condition = "\nInclude only 3 cheapest flats."
+            return_condition = ("\nInclude only 3 cheapest flats.\n"
+                                "Do not include into result rows where price_value IS NULL OR rooms IS NULL OR area_total IS NULL OR renovation IS NULL."
+                                )
             #return_condition = ("\nWrite a SQLite query to retrieve three records with cherapest flats:\n"
             #    "1. The cheapest entry.\n"
             #    "2. The most expensive entry.\n"
@@ -110,6 +112,7 @@ def create_flat_info_retriever(complex_id: str):
             top_k = 2
             return_condition = ("\nInclude (1 cheapest flat and 1 most expensive flat with renovation == 'черновая отделка') and (1 cheapest flat and 1 most expensive flat with renovation == 'под ключ') ."
                 "Combine the results using UNION ALL so that both rows are returned together.\n"
+                "\nDo not include into result rows where price_value IS NULL OR rooms IS NULL OR area_total IS NULL OR renovation IS NULL.\n"
                 "**Important:** Ensure each part of the UNION uses a subquery or appropriate SQLite syntax, since each SELECT uses ORDER BY with LIMIT. Use aliases for any subqueries as needed. Provide the final SQL query only, no explanations.\n"
                 "Example properly formatted query with union:\n"
                 "  SELECT internal_id, price_value, rooms\n"
