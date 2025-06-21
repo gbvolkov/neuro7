@@ -115,13 +115,13 @@ def initialize_agent(model: ModelType = ModelType.GPT):
 
     ho_vesna = create_handoff_tool_no_history(
         agent_name = "vesna_flat_info_retriever", 
-        agent_purpose="provide flats' details for building complex 'vesna' ('Весна').")
+        agent_purpose="provide flats' details for building complex 'vesna' ('Весна'). Call always to get fresh information!")
     ho_andersen = create_handoff_tool_no_history(
         agent_name = "andersen_flat_info_retriever", 
-        agent_purpose="provide flats' details for building complex 'andersen' ('Андерсен').")
+        agent_purpose="provide flats' details for building complex 'andersen' ('Андерсен'). Call always to get fresh information!")
     ho_7ya = create_handoff_tool_no_history(
         agent_name = "7ya_flat_info_retriever", 
-        agent_purpose="provide flats' details for building complex '7ya' ('7Я', 'Семья').")
+        agent_purpose="provide flats' details for building complex '7ya' ('7Я', 'Семья'). Call always to get fresh information!")
 
     ho_tools = [
         create_handoff_tool_no_history(
