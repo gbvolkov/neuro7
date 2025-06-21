@@ -196,7 +196,7 @@ def create_flat_info_retriever(complex_id: str):
         """Answer question using retrieved information as context."""
         prompt = (
             "Given the following user question, corresponding SQL query, "
-            "and SQL result, answer the user question.\n"
+            "and SQL result, provide relevant information from database.\n"
             "If result is empty inform user that there are no records meeting given criteria.\n"
             "Respond with list of flats satisfying criteria\n"
             "Include into response all fields, except technical\n"
